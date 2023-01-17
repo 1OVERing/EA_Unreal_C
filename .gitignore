@@ -1,0 +1,11 @@
+.vs/
+Binaries/
+Platforms/
+DerivedDataCache/
+Intermediate/
+Saved/
+Content/__ExternalActors__
+Content/__ExternalObjects__
+Content/Collections
+Content/Developers
+EA_Unreal_C.sln
