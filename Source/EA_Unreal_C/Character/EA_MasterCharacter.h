@@ -13,10 +13,8 @@ class EA_UNREAL_C_API AEA_MasterCharacter : public ACharacter
 
 public:
 	AEA_MasterCharacter();
-
 protected:
 	virtual void BeginPlay() override;
-
 public:	
 	virtual void Tick(float DeltaTime) override;
 

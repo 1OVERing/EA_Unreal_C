@@ -1,5 +1,7 @@
 #include "EA_MasterAnimInstance.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetStringLibrary.h"
 
 UEA_MasterAnimInstance::UEA_MasterAnimInstance()
 {
@@ -10,8 +12,14 @@ void UEA_MasterAnimInstance::NativeBeginPlay()
 }
 void UEA_MasterAnimInstance::NativeUpdateAnimation(float deltaSeconds)
 {
+	auto Owner = Cast<ACharacter>(TryGetPawnOwner());
+	if (!Owner) return;
+
 	if (true == IsSprint && MovementScale.Y >= 1.f && MovementScale.X == 0.f) SprintTime += deltaSeconds;
 	else SprintTime = 0.f;
+
+	/* Falling */
+	IsFalling = Owner->GetCharacterMovement()->IsFalling();
 }
 
 void UEA_MasterAnimInstance::SetMovementScale(const FVector2D& scale)
@@ -34,7 +42,6 @@ void UEA_MasterAnimInstance::AnimNotify_Jumping()
 	auto Owner = Cast<ACharacter>(TryGetPawnOwner());
 	if (!Owner->IsValidLowLevel()) return;
 	Owner->Jump();
-	
 	FTimerHandle LaunchTimer;
 	auto Lambda = FTimerDelegate::CreateLambda([&]()
 	{

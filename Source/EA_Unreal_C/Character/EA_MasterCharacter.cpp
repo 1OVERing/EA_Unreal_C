@@ -238,11 +238,11 @@ void AEA_MasterCharacter::SprintAction(const FInputActionValue& Value)
 }
 void AEA_MasterCharacter::JumpAction(const FInputActionValue& Value)
 {
-	IsJumping = AnimInstance->PlayJumping(GetCharacterMovement()->Velocity);
+	IsJumping = AnimInstance->PlayJumping(FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y,0.f));
 }
 void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 {
-	if (GetCurrentMontage() != AM_Equip)
+	if (GetCurrentMontage() == nullptr &&!GetCharacterMovement()->IsFalling())
 	{
 		IsEquip = !IsEquip;
 		if (IsEquip) PlayAnimMontage(AM_Equip, 1.f, FName("Equip"));

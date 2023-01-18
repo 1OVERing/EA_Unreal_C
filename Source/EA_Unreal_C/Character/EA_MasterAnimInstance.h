@@ -6,9 +6,6 @@
 #include "Animation/AnimInstance.h"
 #include "EA_MasterAnimInstance.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class EA_UNREAL_C_API UEA_MasterAnimInstance : public UAnimInstance
 {
@@ -25,6 +22,8 @@ public:
 		FORCEINLINE void SetSprint(bool sprint) { IsSprint = sprint; }
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		FORCEINLINE void SetMovementAnimRate(float Rate) { MovementAnimRate = Rate; }
+	UFUNCTION(BlueprintCallable, Category = Movement)
+		FORCEINLINE void SetFalling(bool Falling) { IsFalling = Falling; }
 	UFUNCTION(BlueprintCallable, Category = Movement)
 		bool PlayJumping(FVector LaunchDirection);
 	UFUNCTION()
@@ -46,6 +45,8 @@ protected:
 		bool Jumping = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
 		FVector JumpDirection = FVector::ZeroVector;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+	bool IsFalling = false;
 
 #pragma endregion
 #pragma region Combat
