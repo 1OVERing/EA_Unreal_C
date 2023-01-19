@@ -66,6 +66,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 		UAnimMontage* AM_Equip;
 
+protected:
+	void EndedMontage(UAnimMontage* Montage, bool bInterrupted);
+
 #pragma endregion
 #pragma region Camera
 protected: /* Camera Parameter*/

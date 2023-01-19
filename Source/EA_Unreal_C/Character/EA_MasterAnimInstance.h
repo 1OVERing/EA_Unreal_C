@@ -53,6 +53,8 @@ protected:
 public:
 	UFUNCTION()
 		void SetCombatMode(bool mode);
+	UFUNCTION()
+		void AnimNotify_NextAttackCheck();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
 		bool CombatMode = false;

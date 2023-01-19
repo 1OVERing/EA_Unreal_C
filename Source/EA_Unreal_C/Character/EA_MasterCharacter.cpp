@@ -147,7 +147,8 @@ void AEA_MasterCharacter::BeginPlay()
 	}
 	{
 		auto Anim = Cast<UEA_MasterAnimInstance>(GetMesh()->GetAnimInstance());
-		if (Anim)AnimInstance = Anim;
+		if (Anim)AnimInstance = Anim; /* 여기 델리게이트 문제임 */
+		AnimInstance->OnMontageEnded.AddDynamic(this,&AEA_MasterCharacter::EndedMontage);
 	}
 	{
 		LandedDelegate.AddDynamic(this, &AEA_MasterCharacter::LandedEvent);
@@ -300,5 +301,11 @@ void AEA_MasterCharacter::LandedEvent(const FHitResult& Hit)
 {
 	AnimInstance->LandedEvent(Hit);
 	IsJumping = false;
+}
+#pragma endregion
+#pragma region Animation
+void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
+{
+	GEngine->AddOnScreenDebugMessage(10112, 1.f, FColor::Green, Montage->GetFName().ToString());
 }
 #pragma endregion

@@ -8,8 +8,7 @@ UEA_MasterAnimInstance::UEA_MasterAnimInstance()
 }
 
 void UEA_MasterAnimInstance::NativeBeginPlay()
-{
-}
+{}
 void UEA_MasterAnimInstance::NativeUpdateAnimation(float deltaSeconds)
 {
 	auto Owner = Cast<ACharacter>(TryGetPawnOwner());
@@ -59,4 +58,20 @@ void UEA_MasterAnimInstance::LandedEvent(const FHitResult& Hit)
 void UEA_MasterAnimInstance::SetCombatMode(bool mode)
 {
 	CombatMode = mode;
+}
+
+void UEA_MasterAnimInstance::AnimNotify_NextAttackCheck()
+{
+	if (true)
+	{
+		const UAnimMontage* montage = GetCurrentActiveMontage();
+		const FName currentSection = Montage_GetCurrentSection(montage);
+		const int32 sectionIndex = montage->GetSectionIndex(currentSection);
+		const int NextAttackPoint = UKismetStringLibrary::Conv_StringToInt(currentSection.ToString()) + 1;
+
+		int32 Finder = montage->GetSectionIndex(FName(UKismetStringLibrary::Conv_IntToString(NextAttackPoint)));
+		if (-1 == Finder) return;
+
+		Montage_JumpToSection(montage->GetSectionName(Finder), montage);
+	}
 }
