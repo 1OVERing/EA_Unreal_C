@@ -17,12 +17,13 @@ protected:
 	virtual void BeginPlay() override;
 public:	
 	virtual void Tick(float DeltaTime) override;
-
+	UFUNCTION(BlueprintCallable)
+	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
 #pragma region InputSystem
 protected: /* Input System Parameter*/
-	UPROPERTY(BlueprintReadOnly, Category = EnhancedInputSystem)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = EnhancedInputSystem)
 	class UIMC_Movement* MovementMappingContext;
-	UPROPERTY(BlueprintReadOnly, Category = EnhancedInputSystem)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnhancedInputSystem)
 	class UIMC_Combat* CombatMappingContext;
 protected: /* Input System Bind Function*/
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -32,6 +33,8 @@ protected: /* Input System Bind Function*/
 	void SprintAction(const struct FInputActionValue& Value);
 	void JumpAction(const struct FInputActionValue& Value);
 	void EquipAction(const struct FInputActionValue& Value);
+	void LMouseAction(const struct FInputActionValue& Value);
+	void RMouseAction(const struct FInputActionValue& Value);
 #pragma endregion
 #pragma region Movement
 protected: /* Movement Parameter */
@@ -39,22 +42,30 @@ protected: /* Movement Parameter */
 		bool IsSprint = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 		bool IsJumping = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		UAnimMontage* AM_Dodge;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
+		FVector2D MovementScale = FVector2D::ZeroVector;
 protected:/* Movement Function */
 	UFUNCTION()
 		void LandedEvent(const FHitResult& Hit);
 #pragma endregion
 #pragma region Combat
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 		bool IsEquip = false;
-
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	UAnimMontage* NormalAttackCombo;
 #pragma endregion
 #pragma region Animation
 protected: /* Animation Parameter */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
+	UPROPERTY(BlueprintReadOnly, Category = Animation)
 		class UEA_MasterAnimInstance* MasterAnimInstance;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 		UAnimMontage* AM_Equip;
+
 #pragma endregion
 #pragma region Camera
 protected: /* Camera Parameter*/
@@ -66,7 +77,6 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraArm; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 #pragma endregion
-
 };
 
 #define IMC_Movement MovementMappingContext

@@ -8,7 +8,7 @@
 
 class UInputAction;
 
-UCLASS()
+UCLASS(BlueprintType, config = Input)
 class EA_UNREAL_C_API UIMC_Combat : public UInputMappingContext
 {
 	GENERATED_BODY()
@@ -17,6 +17,10 @@ public:
 
 private:
 	UInputAction* EquipAction;
+	UInputAction* LMouseAction;
+	UInputAction* RMouseAction;
 public:
 	FORCEINLINE UInputAction* GetEquipAction() const { return EquipAction; }
+	FORCEINLINE UInputAction* GetLMouseAction() const { return LMouseAction; }
+	FORCEINLINE UInputAction* GetRMouseAction() const { return RMouseAction; }
 };

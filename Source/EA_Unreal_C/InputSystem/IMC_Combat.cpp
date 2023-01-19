@@ -1,6 +1,8 @@
 #include "IMC_Combat.h"
 
 #include "IA_Equip.h"
+#include "IA_LMouse.h"
+#include "IA_RMouse.h"
 
 UIMC_Combat::UIMC_Combat()
 {
@@ -12,6 +14,24 @@ UIMC_Combat::UIMC_Combat()
 		{
 			EquipAction = equip;
 			this->MapKey(EquipAction, FKey("E"));
+		}
+	}
+	/* LMouse */
+	{
+		static UIA_LMouse* action = NewObject<UIA_LMouse>();
+		if (!LMouseAction)
+		{
+			LMouseAction = action;
+			this->MapKey(LMouseAction, FKey("LeftMouseButton"));
+		}
+	}
+	/* RMouse */
+	{
+		static UIA_RMouse* action = NewObject<UIA_RMouse>();
+		if (!RMouseAction)
+		{
+			RMouseAction = action;
+			this->MapKey(RMouseAction, FKey("RightMouseButton"));
 		}
 	}
 }

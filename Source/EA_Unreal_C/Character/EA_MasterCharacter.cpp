@@ -5,6 +5,7 @@
 #include "EA_MasterAnimInstance.h"
 
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetStringLibrary.h"
 
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
@@ -131,13 +132,6 @@ AEA_MasterCharacter::AEA_MasterCharacter()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->JumpZVelocity = 1000.f;
 #pragma endregion
-#pragma region Montage
-	/* Equip */
-	{
-		static auto Montage = ConstructorHelpers::FObjectFinder<UAnimMontage>(TEXT("/Game/Animations/PP801_P3/Montage/AM_Equip.AM_Equip"));
-		if (Montage.Succeeded()) AM_Equip = Montage.Object;
-	}
-#pragma endregion
 }
 void AEA_MasterCharacter::BeginPlay()
 {
@@ -164,11 +158,16 @@ void AEA_MasterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-
+void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
+{
+	AM_Equip = EquipMontage;
+	AM_Dodge = DodgeMontage;
+}
 #pragma region InputSystemFunc
 void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	if (!IMC_Movement || !IMC_Combat) return;
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
@@ -187,8 +186,15 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 			EnhancedInputComponent->BindAction(IMC_Movement->GetJumpAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::JumpAction);
 		}
 
-		/* Equip */
-		EnhancedInputComponent->BindAction(IMC_Combat->GetEquipAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::EquipAction);
+		/* Combat */
+		{
+			/* Equip */
+			EnhancedInputComponent->BindAction(IMC_Combat->GetEquipAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::EquipAction);
+			/* LMouse */
+			EnhancedInputComponent->BindAction(IMC_Combat->GetLMouseAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::LMouseAction);
+			/* RMouse */
+			EnhancedInputComponent->BindAction(IMC_Combat->GetRMouseAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::RMouseAction);
+		}
 	}
 }
 
@@ -205,12 +211,14 @@ void AEA_MasterCharacter::MoveAction_Triggered(const FInputActionValue& Value)
 		SetActorRotation(NewActorRotation);
 
 		(IsSprint) ? InputDirction = FVector2D(0.f, 2.f) : InputDirction = FVector2D(0.f, 1.f);
+		MovementScale = InputDirction;
 		AnimInstance->SetMovementScale(InputDirction);
 	}
 	if (IsEquip && !IsJumping)
 	{
 		SetActorRotation(FRotator(0.f, GetControlRotation().Yaw, 0.f));
 		FVector2D InputDirction = Value.Get<FVector2D>();
+		MovementScale = InputDirction;
 		AnimInstance->SetMovementScale(InputDirction);
 	}
 }
@@ -218,9 +226,9 @@ void AEA_MasterCharacter::MoveAction_Completed(const FInputActionValue& Value)
 {
 	IsSprint = false;
 	AnimInstance->SetSprint(false);
+	MovementScale = Value.Get<FVector2D>();
 	AnimInstance->SetMovementScale(FVector2D::ZeroVector);
 }
-
 void AEA_MasterCharacter::LookAction(const FInputActionValue& Value)
 {
 	FVector2D inputScale = Value.Get<FVector2D>();
@@ -238,11 +246,11 @@ void AEA_MasterCharacter::SprintAction(const FInputActionValue& Value)
 }
 void AEA_MasterCharacter::JumpAction(const FInputActionValue& Value)
 {
-	IsJumping = AnimInstance->PlayJumping(FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y,0.f));
+	IsJumping = AnimInstance->PlayJumping(FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.f));
 }
 void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 {
-	if (GetCurrentMontage() == nullptr &&!GetCharacterMovement()->IsFalling())
+	if (GetCurrentMontage() == nullptr && !GetCharacterMovement()->IsFalling())
 	{
 		IsEquip = !IsEquip;
 		if (IsEquip) PlayAnimMontage(AM_Equip, 1.f, FName("Equip"));
@@ -253,6 +261,35 @@ void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor(1, 1, 1), message);
 		AnimInstance->SetCombatMode(IsEquip);
 	}
+}
+void AEA_MasterCharacter::LMouseAction(const FInputActionValue& Value)
+{
+	GEngine->AddOnScreenDebugMessage(1011, 1.f, FColor::Green, TEXT("LMouse"));
+}
+void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
+{
+	if (!IsEquip) return;
+	FName SectionName = "";
+	if (GetCurrentMontage() != AM_Dodge)
+	{
+		if (MovementScale.Y > 0.f) SectionName = TEXT("Slide_F");
+		else if (MovementScale.Y < 0.f) SectionName = TEXT("Slide_B");
+		else if (MovementScale.X > 0.f) SectionName = TEXT("Slide_R");
+		else if (MovementScale.X < 0.f) SectionName = TEXT("Slide_L");
+		else SectionName = TEXT("Slide_B");
+	}
+	else
+	{
+		if(-1 != UKismetStringLibrary::FindSubstring(AnimInstance->Montage_GetCurrentSection(AM_Dodge).ToString(), "Dodge")) return;
+
+		if (MovementScale.Y > 0.f) SectionName = TEXT("Dodge_F");
+		else if (MovementScale.Y < 0.f) SectionName = TEXT("Dodge_B");
+		else if (MovementScale.X > 0.f) SectionName = TEXT("Dodge_R");
+		else if (MovementScale.X < 0.f) SectionName = TEXT("Dodge_L");
+		else SectionName = TEXT("Dodge_B");
+	}
+
+	PlayAnimMontage(AM_Dodge,1.f,SectionName);
 }
 #pragma endregion
 
