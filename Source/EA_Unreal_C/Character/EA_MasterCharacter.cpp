@@ -265,6 +265,8 @@ void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 void AEA_MasterCharacter::LMouseAction(const FInputActionValue& Value)
 {
 	GEngine->AddOnScreenDebugMessage(1011, 1.f, FColor::Green, TEXT("LMouse"));
+
+	PlayAnimMontage(NormalAttackCombo);
 }
 void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
 {
