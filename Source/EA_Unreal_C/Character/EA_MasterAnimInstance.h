@@ -53,10 +53,18 @@ protected:
 public:
 	UFUNCTION()
 		void SetCombatMode(bool mode);
+	UFUNCTION(BlueprintPure)
+		FORCEINLINE bool GetCurremtMovementIsSprint();
 	UFUNCTION()
 		void AnimNotify_NextAttackCheck();
+		void SetNextAttack();
+		void EndedAttack();
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+		bool IsNextAttack = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
 		bool CombatMode = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
+		float MaxSprintTime = 0.f;
 #pragma endregion
 };

@@ -26,7 +26,6 @@ void UEA_MasterAnimInstance::SetMovementScale(const FVector2D& scale)
 	PrevMovementScale = MovementScale;
 	MovementScale = scale;
 }
-
 bool UEA_MasterAnimInstance::PlayJumping(FVector LaunchDirection)
 {
 	if (GetCurrentActiveMontage() != nullptr) return false;
@@ -35,7 +34,6 @@ bool UEA_MasterAnimInstance::PlayJumping(FVector LaunchDirection)
 	JumpDirection = LaunchDirection;
 	return true;
 }
-
 void UEA_MasterAnimInstance::AnimNotify_Jumping()
 {
 	auto Owner = Cast<ACharacter>(TryGetPawnOwner());
@@ -54,18 +52,25 @@ void UEA_MasterAnimInstance::LandedEvent(const FHitResult& Hit)
 {
 	Jumping = false;
 }
-
 void UEA_MasterAnimInstance::SetCombatMode(bool mode)
 {
 	CombatMode = mode;
 }
-
+bool UEA_MasterAnimInstance::GetCurremtMovementIsSprint()
+{
+	return SprintTime > MaxSprintTime;
+}
 void UEA_MasterAnimInstance::AnimNotify_NextAttackCheck()
 {
-	if (true)
+	if (IsNextAttack)
 	{
+		IsNextAttack = false;
 		const UAnimMontage* montage = GetCurrentActiveMontage();
 		const FName currentSection = Montage_GetCurrentSection(montage);
+		if (currentSection == FName("Loop"))
+		{
+			Montage_JumpToSection(currentSection, montage);
+		}
 		const int32 sectionIndex = montage->GetSectionIndex(currentSection);
 		const int NextAttackPoint = UKismetStringLibrary::Conv_StringToInt(currentSection.ToString()) + 1;
 
@@ -74,4 +79,13 @@ void UEA_MasterAnimInstance::AnimNotify_NextAttackCheck()
 
 		Montage_JumpToSection(montage->GetSectionName(Finder), montage);
 	}
+
+}
+void UEA_MasterAnimInstance::SetNextAttack()
+{
+	IsNextAttack = true;
+}
+void UEA_MasterAnimInstance::EndedAttack()
+{
+	IsNextAttack = false;
 }

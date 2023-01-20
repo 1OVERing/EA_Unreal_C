@@ -55,8 +55,19 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 		bool IsEquip = false;
 protected:
+	UFUNCTION(BlueprintCallable)
+	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimMontage* NormalAttackCombo;
+	UAnimMontage* AM_NormalAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	UAnimMontage* AM_BackAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	UAnimMontage* AM_LoopAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	UAnimMontage* AM_AirAttack;
+public:
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool IsAttacking();
 #pragma endregion
 #pragma region Animation
 protected: /* Animation Parameter */
@@ -67,6 +78,7 @@ protected:
 		UAnimMontage* AM_Equip;
 
 protected:
+	UFUNCTION()
 	void EndedMontage(UAnimMontage* Montage, bool bInterrupted);
 
 #pragma endregion

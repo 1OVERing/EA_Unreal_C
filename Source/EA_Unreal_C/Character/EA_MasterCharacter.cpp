@@ -147,8 +147,11 @@ void AEA_MasterCharacter::BeginPlay()
 	}
 	{
 		auto Anim = Cast<UEA_MasterAnimInstance>(GetMesh()->GetAnimInstance());
-		if (Anim)AnimInstance = Anim; /* 여기 델리게이트 문제임 */
-		AnimInstance->OnMontageEnded.AddDynamic(this,&AEA_MasterCharacter::EndedMontage);
+		if (Anim)
+		{
+			AnimInstance = Anim;
+			AnimInstance->OnMontageEnded.AddDynamic(this, &AEA_MasterCharacter::EndedMontage);
+		}
 	}
 	{
 		LandedDelegate.AddDynamic(this, &AEA_MasterCharacter::LandedEvent);
@@ -198,7 +201,75 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		}
 	}
 }
+#pragma endregion
+#pragma region Combat
+void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
+{
+	if (GetCurrentMontage() == nullptr && !GetCharacterMovement()->IsFalling())
+	{
+		IsEquip = !IsEquip;
+		if (IsEquip) PlayAnimMontage(AM_Equip, 1.f, FName("Equip"));
+		else PlayAnimMontage(AM_Equip, 1.f, FName("UnEquip"));
 
+		FString message;
+		IsEquip ? message = FString("Equip") : message = FString("NotEquip");
+		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor(1, 1, 1), message);
+		AnimInstance->SetCombatMode(IsEquip);
+	}
+}
+void AEA_MasterCharacter::LMouseAction(const FInputActionValue& Value)
+{
+	if (!IsEquip) return;
+	if (IsAttacking())
+	{
+		AnimInstance->SetNextAttack();
+	}
+	else
+	{
+		if(AnimInstance->GetCurremtMovementIsSprint()) PlayAnimMontage(AM_LoopAttack);
+		else if (MovementScale.Y < 0.f) PlayAnimMontage(AM_BackAttack);
+		else PlayAnimMontage(AM_NormalAttack);
+	}
+
+
+	GEngine->AddOnScreenDebugMessage(1011, 1.f, FColor::Green, TEXT("LMouse"));
+}
+void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
+{
+	if (!IsEquip) return;
+	FName SectionName = "";
+	if (GetCurrentMontage() != AM_Dodge)
+	{
+		if (MovementScale.Y > 0.f) SectionName = TEXT("Slide_F");
+		else if (MovementScale.Y < 0.f) SectionName = TEXT("Slide_B");
+		else if (MovementScale.X > 0.f) SectionName = TEXT("Slide_R");
+		else if (MovementScale.X < 0.f) SectionName = TEXT("Slide_L");
+		else SectionName = TEXT("Slide_B");
+	}
+	else
+	{
+		if(-1 != UKismetStringLibrary::FindSubstring(AnimInstance->Montage_GetCurrentSection(AM_Dodge).ToString(), "Dodge")) return;
+
+		if (MovementScale.Y > 0.f) SectionName = TEXT("Dodge_F");
+		else if (MovementScale.Y < 0.f) SectionName = TEXT("Dodge_B");
+		else if (MovementScale.X > 0.f) SectionName = TEXT("Dodge_R");
+		else if (MovementScale.X < 0.f) SectionName = TEXT("Dodge_L");
+		else SectionName = TEXT("Dodge_B");
+	}
+
+	PlayAnimMontage(AM_Dodge,1.f,SectionName);
+}
+bool AEA_MasterCharacter::IsAttacking()
+{
+	if (GetCurrentMontage() == AM_NormalAttack || GetCurrentMontage() == AM_BackAttack ||
+		GetCurrentMontage() == AM_LoopAttack || GetCurrentMontage() == AM_AirAttack)
+	{
+		return true;
+	}
+	return false;
+}
+#pragma endregion
+#pragma region Movement
 void AEA_MasterCharacter::MoveAction_Triggered(const FInputActionValue& Value)
 {
 	if (!IsEquip && !IsJumping)
@@ -249,63 +320,26 @@ void AEA_MasterCharacter::JumpAction(const FInputActionValue& Value)
 {
 	IsJumping = AnimInstance->PlayJumping(FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.f));
 }
-void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
-{
-	if (GetCurrentMontage() == nullptr && !GetCharacterMovement()->IsFalling())
-	{
-		IsEquip = !IsEquip;
-		if (IsEquip) PlayAnimMontage(AM_Equip, 1.f, FName("Equip"));
-		else PlayAnimMontage(AM_Equip, 1.f, FName("UnEquip"));
-
-		FString message;
-		IsEquip ? message = FString("Equip") : message = FString("NotEquip");
-		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor(1, 1, 1), message);
-		AnimInstance->SetCombatMode(IsEquip);
-	}
-}
-void AEA_MasterCharacter::LMouseAction(const FInputActionValue& Value)
-{
-	GEngine->AddOnScreenDebugMessage(1011, 1.f, FColor::Green, TEXT("LMouse"));
-
-	PlayAnimMontage(NormalAttackCombo);
-}
-void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
-{
-	if (!IsEquip) return;
-	FName SectionName = "";
-	if (GetCurrentMontage() != AM_Dodge)
-	{
-		if (MovementScale.Y > 0.f) SectionName = TEXT("Slide_F");
-		else if (MovementScale.Y < 0.f) SectionName = TEXT("Slide_B");
-		else if (MovementScale.X > 0.f) SectionName = TEXT("Slide_R");
-		else if (MovementScale.X < 0.f) SectionName = TEXT("Slide_L");
-		else SectionName = TEXT("Slide_B");
-	}
-	else
-	{
-		if(-1 != UKismetStringLibrary::FindSubstring(AnimInstance->Montage_GetCurrentSection(AM_Dodge).ToString(), "Dodge")) return;
-
-		if (MovementScale.Y > 0.f) SectionName = TEXT("Dodge_F");
-		else if (MovementScale.Y < 0.f) SectionName = TEXT("Dodge_B");
-		else if (MovementScale.X > 0.f) SectionName = TEXT("Dodge_R");
-		else if (MovementScale.X < 0.f) SectionName = TEXT("Dodge_L");
-		else SectionName = TEXT("Dodge_B");
-	}
-
-	PlayAnimMontage(AM_Dodge,1.f,SectionName);
-}
-#pragma endregion
-
-#pragma region Movement
 void AEA_MasterCharacter::LandedEvent(const FHitResult& Hit)
 {
 	AnimInstance->LandedEvent(Hit);
 	IsJumping = false;
 }
+void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air)
+{
+	AM_NormalAttack = Normal;
+	AM_BackAttack = Back;
+	AM_LoopAttack = Loop;
+	AM_AirAttack = Air;
+}
 #pragma endregion
 #pragma region Animation
 void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
 {
-	GEngine->AddOnScreenDebugMessage(10112, 1.f, FColor::Green, Montage->GetFName().ToString());
+	if (Montage == AM_NormalAttack || Montage == AM_BackAttack ||
+		Montage == AM_LoopAttack || Montage == AM_AirAttack)
+	{/* End Attack Montage */
+		AnimInstance->EndedAttack();
+	}
 }
 #pragma endregion
