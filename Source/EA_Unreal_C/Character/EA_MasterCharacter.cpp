@@ -342,4 +342,15 @@ void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
 		AnimInstance->EndedAttack();
 	}
 }
+void AEA_MasterCharacter::PlayKnockBack_Implementation()
+{
+}
+void AEA_MasterCharacter::PlayStiffen_Implementation()
+{
+}
+#pragma endregion
+
+
+#pragma region Interface
+
 #pragma endregion

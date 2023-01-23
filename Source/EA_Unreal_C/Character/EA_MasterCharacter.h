@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "../Interface/I_CombatInteraction.h"
 #include "EA_MasterCharacter.generated.h"
 
 UCLASS()
-class EA_UNREAL_C_API AEA_MasterCharacter : public ACharacter
+class EA_UNREAL_C_API AEA_MasterCharacter : public ACharacter, public II_CombatInteraction
 {
 	GENERATED_BODY()
 
@@ -91,6 +92,17 @@ protected: /* Camera Parameter*/
 public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraArm; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+#pragma endregion
+
+
+#pragma region Interface
+public:
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+		void PlayKnockBack();
+	void PlayKnockBack_Implementation();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+		void PlayStiffen();
+	void PlayStiffen_Implementation();
 #pragma endregion
 };
 
