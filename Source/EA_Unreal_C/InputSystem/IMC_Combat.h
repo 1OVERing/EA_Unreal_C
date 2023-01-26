@@ -19,8 +19,10 @@ private:
 	UInputAction* EquipAction;
 	UInputAction* LMouseAction;
 	UInputAction* RMouseAction;
+	UInputAction* CatchAction;
 public:
 	FORCEINLINE UInputAction* GetEquipAction() const { return EquipAction; }
 	FORCEINLINE UInputAction* GetLMouseAction() const { return LMouseAction; }
 	FORCEINLINE UInputAction* GetRMouseAction() const { return RMouseAction; }
+	FORCEINLINE UInputAction* GetCatchAction() const { return CatchAction; }
 };

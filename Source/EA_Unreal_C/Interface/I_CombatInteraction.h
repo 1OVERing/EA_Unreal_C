@@ -23,4 +23,6 @@ public:
 	void PlayKnockBack();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 	void PlayStiffen();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	bool PlayCatchAttack(UAnimMontage* montage,FName sectionName);
 };

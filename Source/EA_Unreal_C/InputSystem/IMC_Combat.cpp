@@ -3,6 +3,7 @@
 #include "IA_Equip.h"
 #include "IA_LMouse.h"
 #include "IA_RMouse.h"
+#include "IA_Catch.h"
 
 UIMC_Combat::UIMC_Combat()
 {
@@ -32,6 +33,15 @@ UIMC_Combat::UIMC_Combat()
 		{
 			RMouseAction = action;
 			this->MapKey(RMouseAction, FKey("RightMouseButton"));
+		}
+	}
+	/* Catch */
+	{
+		static UIA_Catch* action = NewObject<UIA_Catch>();
+		if (!CatchAction)
+		{
+			CatchAction = action;
+			this->MapKey(CatchAction, FKey("Q"));
 		}
 	}
 }

@@ -36,6 +36,7 @@ protected: /* Input System Bind Function*/
 	void EquipAction(const struct FInputActionValue& Value);
 	void LMouseAction(const struct FInputActionValue& Value);
 	void RMouseAction(const struct FInputActionValue& Value);
+	void CatchAction(const struct FInputActionValue& Value);
 #pragma endregion
 #pragma region Movement
 protected: /* Movement Parameter */
@@ -55,9 +56,11 @@ protected:/* Movement Function */
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 		bool IsEquip = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
+		bool IsCatchingAttack = false;
 protected:
 	UFUNCTION(BlueprintCallable)
-	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air);
+	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*> Catch);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	UAnimMontage* AM_NormalAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
@@ -66,6 +69,8 @@ protected:
 	UAnimMontage* AM_LoopAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	UAnimMontage* AM_AirAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	TArray<UAnimMontage*> AM_CatchingAttack;
 public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE bool IsAttacking();
@@ -103,6 +108,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 		void PlayStiffen();
 	void PlayStiffen_Implementation();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	bool PlayCatchAttack(UAnimMontage* montage, FName sectionName);
+	bool PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName);
 #pragma endregion
 };
 

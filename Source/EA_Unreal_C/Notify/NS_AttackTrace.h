@@ -46,4 +46,6 @@ public:
 		TObjectPtr<UNiagaraSystem> HittedEffect;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		bool IsStiffen = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		UAnimMontage* TargetMontage = nullptr;
 };
