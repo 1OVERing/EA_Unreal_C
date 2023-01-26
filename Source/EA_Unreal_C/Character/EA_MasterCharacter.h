@@ -109,3 +109,6 @@ public:
 #define IMC_Movement MovementMappingContext
 #define IMC_Combat CombatMappingContext
 #define AnimInstance MasterAnimInstance
+
+#define StiffenPower 0.001f
+#define StiffenTime 0.1f

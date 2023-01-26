@@ -58,10 +58,11 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 		{ // CombatInteraction
 			II_CombatInteraction* _interface = Cast<II_CombatInteraction>(TargetActor);
 			if (IsKnockback) _interface->Execute_PlayKnockBack(TargetActor);
-			if(IsStiffen) _interface->Execute_PlayStiffen(TargetActor);
 		}
-
-
+		{
+			II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Owner);
+			if(IsStiffen) _interface->Execute_PlayStiffen(Owner);
+		}
 		{
 			UGameplayStatics::ApplyDamage(TargetActor, AttackDamage, Owner->GetController(), Owner, UDamageType::StaticClass());
 		}

@@ -342,15 +342,19 @@ void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
 		AnimInstance->EndedAttack();
 	}
 }
+#pragma endregion
+
+
+#pragma region Interface
 void AEA_MasterCharacter::PlayKnockBack_Implementation()
 {
 }
 void AEA_MasterCharacter::PlayStiffen_Implementation()
 {
+	this->CustomTimeDilation = StiffenPower;
+	FTimerHandle StiffenTimer;
+
+	GetWorld()->GetTimerManager().
+	SetTimer(StiffenTimer, FTimerDelegate::CreateLambda([&]() {this->CustomTimeDilation = 1.f;}), StiffenTime, false);
 }
-#pragma endregion
-
-
-#pragma region Interface
-
 #pragma endregion
