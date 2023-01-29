@@ -16,5 +16,5 @@ void UNS_RootmotionAutoMoveY::NotifyTick(USkeletalMeshComponent* MeshComp, UAnim
 	Distance *= 10.f;
 	Distance *= MoveScale;
 
-	Owner->SetActorLocation(Owner->GetActorLocation() + Distance, true);
+	Owner->SetActorLocation(Owner->GetActorLocation() + Distance);
 }

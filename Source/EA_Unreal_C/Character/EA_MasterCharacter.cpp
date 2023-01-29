@@ -278,10 +278,7 @@ void AEA_MasterCharacter::CatchAction(const FInputActionValue& Value)
 	else if(MovementScale.X != 0) MovementNum = 2;
 	else MovementNum = 0;
 
-	GEngine->AddOnScreenDebugMessage(1123, 1.f, FColor::Red,UKismetStringLibrary::Conv_IntToString(MovementNum));
-
 	int AmIndex = UKismetMathLibrary::Clamp(MovementNum, 0, AM_CatchingAttack.Num() - 1);
-
 	GEngine->AddOnScreenDebugMessage(113, 1.f, FColor::Green, UKismetStringLibrary::Conv_IntToString(AmIndex));
 	PlayAnimMontage(AM_CatchingAttack[AmIndex]);
 }
