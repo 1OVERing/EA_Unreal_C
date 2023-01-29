@@ -48,4 +48,6 @@ public:
 		bool IsStiffen = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		UAnimMontage* TargetMontage = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	bool MontageLookAt = false;
 };

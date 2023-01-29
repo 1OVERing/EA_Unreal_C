@@ -7,6 +7,7 @@
 #include "DrawDebugHelpers.h"
 #include "NiagarafunctionLibrary.h"
 #include "../Interface/I_CombatInteraction.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #define TraceDrawTime 0.1f
 
@@ -43,10 +44,10 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 		/* PlayEffect */
 		if (HittedEffect)UNiagaraFunctionLibrary::SpawnSystemAtLocation(MeshComp->GetWorld(), HittedEffect, value.Value.ImpactPoint);
 
+		ACharacter* targetCharacter = Cast<ACharacter>(TargetActor);
 		/* Knockback */
 		if (IsKnockback)
 		{
-			ACharacter* targetCharacter = Cast<ACharacter>(TargetActor);
 			if (targetCharacter)
 			{
 				FVector KnockbackPower = Owner->GetActorForwardVector() * (KnockbackDistance * 1000.f);
@@ -65,6 +66,17 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 		}
 		{
 			UGameplayStatics::ApplyDamage(TargetActor, AttackDamage, Owner->GetController(), Owner, UDamageType::StaticClass());
+		}
+		{
+			if (MontageLookAt)
+			{
+				FRotator rotation = UKismetMathLibrary::FindLookAtRotation(targetCharacter->GetActorLocation(), Owner->GetActorLocation());
+				targetCharacter->SetActorRotation(rotation);
+			}
+
+
+
+			if (TargetMontage) targetCharacter->PlayAnimMontage(TargetMontage);
 		}
 	}
 
