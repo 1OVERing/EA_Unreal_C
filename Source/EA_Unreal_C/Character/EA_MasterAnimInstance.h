@@ -51,7 +51,7 @@ protected:
 #pragma endregion
 #pragma region Combat
 public:
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 		void SetCombatMode(bool mode);
 	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool GetCurremtMovementIsSprint();
