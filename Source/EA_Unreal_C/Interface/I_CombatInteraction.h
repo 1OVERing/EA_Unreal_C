@@ -19,10 +19,10 @@ class EA_UNREAL_C_API II_CombatInteraction
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "Combat")
 	void PlayKnockBack();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	void PlayStiffen();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	bool PlayCatchAttack(UAnimMontage* montage,FName sectionName);
 };

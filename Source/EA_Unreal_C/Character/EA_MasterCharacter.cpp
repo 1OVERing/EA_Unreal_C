@@ -84,7 +84,7 @@ AEA_MasterCharacter::AEA_MasterCharacter()
 		FAttachmentTransformRules Rules(EAttachmentRule::KeepRelative, false);
 		SK->AttachToComponent(GetMesh(), Rules, FName("HAIR"));
 	}
-	/* Helmet */
+	/* Twinblades */
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> Twinblades(TEXT("/Game/Meshes/Weapon/Twinblades/Twinblades_Common_Sprint.Twinblades_Common_Sprint"));
 	if (Twinblades.Succeeded())
 	{
