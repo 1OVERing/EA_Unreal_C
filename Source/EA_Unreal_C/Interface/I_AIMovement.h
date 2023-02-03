@@ -18,9 +18,9 @@ class EA_UNREAL_C_API II_AIMovement
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-		bool CustomMoveStart();
+		bool CustomMoveStart(FVector MoveToLocation);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-		bool CustomMoveTo();
+		bool CustomMoveTo(FVector MoveToLocation);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-		bool CustomMoveEnd();
+		bool CustomMoveEnd(FVector MoveToLocation);
 };

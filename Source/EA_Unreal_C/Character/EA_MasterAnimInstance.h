@@ -53,6 +53,8 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable)
 		void SetCombatMode(bool mode);
+	UFUNCTION(BlueprintCallable)
+		FORCEINLINE bool GetCombatMode();
 	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool GetCurremtMovementIsSprint();
 	UFUNCTION()

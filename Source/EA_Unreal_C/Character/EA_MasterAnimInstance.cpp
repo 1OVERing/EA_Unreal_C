@@ -56,6 +56,10 @@ void UEA_MasterAnimInstance::SetCombatMode(bool mode)
 {
 	CombatMode = mode;
 }
+bool UEA_MasterAnimInstance::GetCombatMode()
+{
+	return CombatMode;
+}
 bool UEA_MasterAnimInstance::GetCurremtMovementIsSprint()
 {
 	return SprintTime > MaxSprintTime;

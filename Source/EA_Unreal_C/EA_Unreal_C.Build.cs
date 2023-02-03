@@ -8,7 +8,15 @@ public class EA_Unreal_C : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","EnhancedInput", "Niagara", "AIModule" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"EnhancedInput",
+			"Niagara",
+			"AIModule",
+			"GameplayTasks",
+			"NavigationSystem"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

@@ -8,8 +8,16 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
-AAIC_MasterEnemy::AAIC_MasterEnemy()
+#include "UObject/ConstructorHelpers.h"
+
+AAIC_MasterEnemy::AAIC_MasterEnemy(FObjectInitializer const& ObjectInitializer)
 {
+	static ConstructorHelpers::FObjectFinder<UBehaviorTree> Obj(TEXT("/Game/Blueprints/AI/BT_MasterEnemy.BT_MasterEnemy"));
+	if (Obj.Succeeded()) m_BT = Obj.Object;
+
+	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this,TEXT("BehaviorTreeComponent"));
+	m_BB = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
+
 	SetupPerceptionSystem();
 }
 
@@ -17,14 +25,29 @@ void AAIC_MasterEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
+	RunBehaviorTree(m_BT);
+	BehaviorTreeComponent->StartTree(*m_BT);
+
 }
 
 void AAIC_MasterEnemy::OnPossess(APawn* const pawn)
 {
 	Super::OnPossess(pawn);
 
+	if (m_BB)m_BB->InitializeBlackboard(*m_BT->BlackboardAsset);
+
+	SetBlackboardOriginLocation(GetPawn()->GetActorLocation());
 }
-UBlackboardComponent* AAIC_MasterEnemy::GetBlackboard() {return GetBlackboardComponent();}
+UBlackboardComponent* AAIC_MasterEnemy::GetBlackboard() {return m_BB;}
+
+void AAIC_MasterEnemy::SetBlackboardOriginLocation(const FVector& origin)
+{
+	GetBlackboard()->SetValueAsVector("OriginLocation", origin);
+}
+FVector AAIC_MasterEnemy::GetBlackboardOriginLocation()
+{
+	return GetBlackboard()->GetValueAsVector("OriginLocation");
+}
 
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)
 {

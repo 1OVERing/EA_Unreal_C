@@ -19,9 +19,10 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 #pragma region Character
-
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Character")
 	TObjectPtr<USkeletalMeshComponent> SK_Weapon;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Character")
+	TObjectPtr<class AAIC_MasterEnemy> EnemyController;
 #pragma endregion
 #pragma region Movement
 protected:
@@ -31,13 +32,38 @@ protected:
 		FVector PrevLocation;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
 		double StopLocationTime;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+	TObjectPtr<UAnimMontage> AM_TrunL90;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+	TObjectPtr<UAnimMontage> AM_TrunL180;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+	TObjectPtr<UAnimMontage> AM_TrunR90;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+	TObjectPtr<UAnimMontage> AM_TrunR180;
+public:
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	FORCEINLINE void SetMontages_Trun(const UAnimMontage* am_L90,const UAnimMontage* am_L180, const UAnimMontage* am_R90,const UAnimMontage* am_R180);
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool FindWaypoint(const FVector MoveToLocation);
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool MoveCheck();
+	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Movement")
+	FORCEINLINE bool InRotation();
+	const FVector GetNextMovePoint();
 #pragma endregion
 #pragma region Combat
 protected:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 		FTimerHandle HitTimer;
+public:
+	UFUNCTION(BlueprintPure,BlueprintCallable, Category = "Combat")
+	FORCEINLINE bool IsHitReaction();
 #pragma endregion
-
+#pragma region Animtion
+protected:
+	TObjectPtr<class UEA_MasterAnimInstance> AnimInstance;
+#pragma endregion
 
 #pragma region Interface_CombatInteraction
 public:
@@ -54,13 +80,13 @@ public:
 #pragma region Interface_AIMove
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-	bool CustomMoveStart();
-	bool CustomMoveStart_Implementation();
+	bool CustomMoveStart(FVector MoveToLocation);
+	bool CustomMoveStart_Implementation(FVector MoveToLocation);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-	bool CustomMoveTo();
-	bool CustomMoveTo_Implementation();
+	bool CustomMoveTo(FVector MoveToLocation);
+	bool CustomMoveTo_Implementation(FVector MoveToLocation);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AI_Move")
-	bool CustomMoveEnd();
-	bool CustomMoveEnd_Implementation();
+	bool CustomMoveEnd(FVector MoveToLocation);
+	bool CustomMoveEnd_Implementation(FVector MoveToLocation);
 #pragma endregion
 };
