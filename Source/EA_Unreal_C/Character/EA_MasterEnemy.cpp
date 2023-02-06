@@ -44,11 +44,12 @@ void AEA_MasterEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInstance = Cast<UEA_MasterAnimInstance>(GetMesh()->GetAnimInstance());
+	AnimInstance->OnMontageBlendingOut.AddDynamic(this,&AEA_MasterEnemy::MontageBledOut);
 	EnemyController = Cast<AAIC_MasterEnemy>(GetController());
 	EnemyController->OnSightTarget.AddDynamic(this, &AEA_MasterEnemy::SightTarget);
 	if (!AnimInstance || !EnemyController)
 	{
-		GEngine->AddOnScreenDebugMessage(999, 1.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
+		GEngine->AddOnScreenDebugMessage(999, 10.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
 		this->Destroy();
 	}
 }
@@ -57,13 +58,12 @@ void AEA_MasterEnemy::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-
-void AEA_MasterEnemy::SetMontages_Trun(UAnimMontage* am_L90, UAnimMontage* am_L180, UAnimMontage* am_R90, UAnimMontage* am_R180)
+void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 {
-	AM_TrunL90 = am_L90;
-	AM_TrunL180 = am_L180;
-	AM_TrunR90 = am_R90;
-	AM_TrunR180 = am_R180;
+	if (Montage == AM_Equip)
+	{
+		WeaponEquip(AnimInstance->GetCombatMode());
+	}
 }
 
 #pragma region Combat
@@ -74,16 +74,37 @@ void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backw
 	AM_Hit_Right = Right;
 	AM_Hit_Left = Left;
 }
+void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip)
+{
+	AM_Equip = Equip;
+}
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	PlayHitAnimMontage(DamageCauser);
+	if (CanHit())
+	{
+		if(DamageCauser) PlayHitAnimMontage(DamageCauser);
 
+	
+	
+	}
 	return 1.f;
+}
+void AEA_MasterEnemy::WeaponEquip(bool equip)
+{
+	if (equip)
+	{
+		FAttachmentTransformRules Rules(EAttachmentRule::KeepRelative, false);
+		SK_Weapon->AttachToComponent(GetMesh(), Rules, FName("ik_hand_gun"));
+	}
+	else
+	{
+		FAttachmentTransformRules Rules(EAttachmentRule::KeepRelative, false);
+		SK_Weapon->AttachToComponent(GetMesh(), Rules, FName("KatanaSheath"));
+	}
 }
 void AEA_MasterEnemy::PlayHitAnimMontage(const AActor* Causer)
 {
 	{// 예외처리
-
 	}
 
 	StopAnimMontage();
@@ -105,20 +126,53 @@ void AEA_MasterEnemy::PlayHitAnimMontage(const AActor* Causer)
 	{
 		HitTime = PlayAnimMontage(AM_Hit_Left);
 	}
+	SetHitTimer(HitTime);
 }
 void AEA_MasterEnemy::SightTarget_Implementation(AActor* SightTarget)
 {
-	if(SightTarget) AnimInstance->SetCombatMode(true);
-	else AnimInstance->SetCombatMode(false);
-
-
+	if (SightTarget)
+	{
+		if (!AnimInstance->GetCombatMode())
+		{
+			SetHitTimer(PlayAnimMontage(AM_Equip, 1.f, TEXT("Equip")));
+			WeaponEquip(true);
+			AnimInstance->SetCombatMode(true);
+		}
+	}
+	else
+	{
+		SetHitTimer(PlayAnimMontage(AM_Equip, 1.f,TEXT("UnEquip")));
+		AnimInstance->SetCombatMode(false);
+	}
+}
+void AEA_MasterEnemy::HitEndTimerFunc_Implementation()
+{
+	GetWorldTimerManager().ClearTimer(HitTimer);
+}
+void AEA_MasterEnemy::SetHitTimer(float Time)
+{
+	GetWorldTimerManager().ClearTimer(HitTimer);
+	GetWorldTimerManager().SetTimer(HitTimer, this, &AEA_MasterEnemy::HitEndTimerFunc, Time, false);
+}
+bool AEA_MasterEnemy::IsHit()
+{
+	return HitTimer.IsValid();
+}
+bool AEA_MasterEnemy::CanHit()
+{
+	return true;
 }
 bool AEA_MasterEnemy::IsHitReaction()
 {
 	return HitTimer.IsValid();
 }
-#pragma endregion
+#pragma endregion 
 #pragma region Movement
+void AEA_MasterEnemy::SetMontages_Trun(UAnimMontage* am_L180, UAnimMontage* am_R180)
+{
+	AM_TrunL180 = am_L180;
+	AM_TrunR180 = am_R180;
+}
 bool AEA_MasterEnemy::FindWaypoint(const FVector MoveToLocation)
 {
 	UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), MoveToLocation);
@@ -146,7 +200,7 @@ bool AEA_MasterEnemy::MoveCheck()
 bool AEA_MasterEnemy::InRotation()
 {
 	auto montage = this->GetCurrentMontage();
-	return (montage == AM_TrunL90 || montage == AM_TrunL180 || montage == AM_TrunR90 || montage == AM_TrunR180);
+	return (montage == AM_TrunL180 || montage == AM_TrunR180);
 }
 const FVector AEA_MasterEnemy::GetNextMovePoint()
 {
@@ -167,20 +221,36 @@ bool AEA_MasterEnemy::PlayCombatMove()
 	AActor* Target = EnemyController->GetBB_TargetActor();
 
 	FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
-	float Angle = FindAngle(Target->GetActorLocation());
 
-	if (!InRotation() && UKismetMathLibrary::Abs(Angle) <= 80.f)
+	FVector2D Dir = FindVectorToDirection(Target->GetActorLocation());
+	Dir.Y = Dir.Y - 1.f;
+	Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
+	Dir.Y *= 90.f;
+	
+	if (!InRotation() && Dir.Y <= 100.f)
 	{// LookAtRotation
-		this->SetActorRotation(FRotator(0.f,LookAtRotator.Yaw,0.f));
+		float speed = 100.f;
+		speed *= GetWorld()->GetDeltaSeconds();
+
+		float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
+
+		if (RotationDir >= 0)
+		{
+			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+		}
+		else
+		{
+			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed,0.f));
+		}
 	}
-	else if (!InRotation() && UKismetMathLibrary::Abs(Angle) > 80.f)
+	else if (!InRotation() && Dir.Y > 100.f)
 	{// PlayMontage
-		PlayRotationMontage(Angle);
+		PlayRotationMontage(Dir);
 	}
 
 	AnimInstance->SetMovementScale(FindVectorToDirection(WayPoints[0]));
 
-	return 10.f > FVector::Distance(GetActorLocation(), WayPoints.Last());
+	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());
 }
 FVector2D AEA_MasterEnemy::FindVectorToDirection(const FVector& Location)
 {
@@ -220,17 +290,15 @@ float AEA_MasterEnemy::FindAngle(const FVector TargetLocation)
 
 	return OwnerAngle - TargetAngle;
 }
-void AEA_MasterEnemy::PlayRotationMontage(float Angle)
+void AEA_MasterEnemy::PlayRotationMontage(FVector2D Angle)
 {
-	if (Angle >= 0.f)
+	if (Angle.X >= 0.f)
 	{
-		if (UKismetMathLibrary::Abs(Angle) > 170.f)PlayAnimMontage(AM_TrunR180);
-		else PlayAnimMontage(AM_TrunR90);
+		PlayAnimMontage(AM_TrunR180);
 	}
 	else
 	{
-		if (UKismetMathLibrary::Abs(Angle) > 170.f)PlayAnimMontage(AM_TrunL180);
-		else PlayAnimMontage(AM_TrunL90);
+		PlayAnimMontage(AM_TrunL180);
 	}
 }
 void AEA_MasterEnemy::SetSprint(bool spint)
@@ -260,7 +328,16 @@ void AEA_MasterEnemy::SprintCheck()
 #pragma region Interface_CombatInteraction
 void AEA_MasterEnemy::PlayKnockBack_Implementation() {}
 void AEA_MasterEnemy::PlayStiffen_Implementation() {}
-bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName) { return false; }
+bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName)
+{
+	if (!CanHit()) return false;
+	StopAnimMontage();
+	float HitTime = 0.f;
+	PlayAnimMontage(montage,1.f,sectionName);
+	HitTime = montage->GetSectionLength(montage->GetSectionIndex(sectionName));
+	SetHitTimer(HitTime);
+	return true;
+}
 #pragma endregion
 #pragma region Interface_AIMove
 bool AEA_MasterEnemy::CustomMoveStart_Implementation(FVector MoveToLocation)
@@ -274,6 +351,7 @@ bool AEA_MasterEnemy::CustomMoveStart_Implementation(FVector MoveToLocation)
 bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 {
 	if (!MoveCheck()) return true;
+	if (IsHit()) return true;
 
 	FVector NextWaypoint = GetNextMovePoint();
 	if (NextWaypoint == FVector::ZeroVector) return true;
@@ -287,7 +365,7 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 		this->SetActorRotation(FRotator(0.f,lookAt, 0.f));
 		AnimInstance->SetMovementScale(FVector2D(0.f,1.f));
 	}
-	return 10.f > FVector::Distance(GetActorLocation(), WayPoints.Last());
+	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());
 }
 bool AEA_MasterEnemy::CustomMoveEnd_Implementation(FVector MoveToLocation)
 {
