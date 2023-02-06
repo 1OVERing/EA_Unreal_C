@@ -67,6 +67,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
 		bool CombatMode = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
-		float MaxSprintTime = 0.f;
+		float MaxSprintTime = 2.f;
 #pragma endregion
 };

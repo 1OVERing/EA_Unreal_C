@@ -49,10 +49,28 @@ FVector AAIC_MasterEnemy::GetBlackboardOriginLocation()
 	return GetBlackboard()->GetValueAsVector("OriginLocation");
 }
 
+AActor* AAIC_MasterEnemy::GetBB_TargetActor()
+{
+	return Cast<AActor>(GetBlackboard()->GetValueAsObject("TargetActor"));
+}
+
+void AAIC_MasterEnemy::SetBB_TargetActor(AActor* Actor)
+{
+	GetBlackboard()->SetValueAsObject("TargetActor",Actor);
+}
+
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)
 {
-	if(stimulus.WasSuccessfullySensed()) GEngine->AddOnScreenDebugMessage(1233, 1.f, FColor::Red, TEXT("Success"));
-	else GEngine->AddOnScreenDebugMessage(1233, 1.f, FColor::Red, TEXT("NotSuccess"));
+	if (stimulus.WasSuccessfullySensed())
+	{
+		OnSightTarget.Broadcast(UpdatedActor);
+		SetBB_TargetActor(UpdatedActor);
+	}
+	else
+	{
+		OnSightTarget.Broadcast(nullptr);
+		SetBB_TargetActor(nullptr);
+	}
 }
 
 void AAIC_MasterEnemy::SetupPerceptionSystem()

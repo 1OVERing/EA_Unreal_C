@@ -43,22 +43,52 @@ protected:
 	TObjectPtr<UAnimMontage> AM_TrunR180;
 public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-	FORCEINLINE void SetMontages_Trun(const UAnimMontage* am_L90,const UAnimMontage* am_L180, const UAnimMontage* am_R90,const UAnimMontage* am_R180);
+	FORCEINLINE void SetMontages_Trun(UAnimMontage* am_L90,UAnimMontage* am_L180,UAnimMontage* am_R90,UAnimMontage* am_R180);
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool FindWaypoint(const FVector MoveToLocation);
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool MoveCheck();
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Movement")
 	FORCEINLINE bool InRotation();
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	FORCEINLINE void SetSprint(bool spint);
+	UFUNCTION(BlueprintCallable, Category = "Movement")
 	const FVector GetNextMovePoint();
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool PlayCombatMove();
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SprintCheck();
+	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Movement")
+	float FindAngle(const FVector TargetLocation);
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void PlayRotationMontage(float Angle);
+	UFUNCTION(BlueprintPure,BlueprintCallable, Category = "Movement")
+	FVector2D FindVectorToDirection(const FVector& Location);
 #pragma endregion
 #pragma region Combat
 protected:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 		FTimerHandle HitTimer;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+		TObjectPtr<UAnimMontage> AM_Hit_Forward;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+		TObjectPtr<UAnimMontage> AM_Hit_Backward;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+		TObjectPtr<UAnimMontage> AM_Hit_Right;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Movement")
+		TObjectPtr<UAnimMontage> AM_Hit_Left;
 public:
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void PlayHitAnimMontage(const AActor* Causer);
 	UFUNCTION(BlueprintPure,BlueprintCallable, Category = "Combat")
 	FORCEINLINE bool IsHitReaction();
+	UFUNCTION(BlueprintNativeEvent, Category = "Combat")
+	void SightTarget(AActor* SightTarget);
+	void SightTarget_Implementation(AActor* SightTarget);
 #pragma endregion
 #pragma region Animtion
 protected:
