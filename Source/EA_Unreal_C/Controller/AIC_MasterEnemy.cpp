@@ -17,7 +17,6 @@ AAIC_MasterEnemy::AAIC_MasterEnemy(FObjectInitializer const& ObjectInitializer)
 
 	BehaviorTreeComponent = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this,TEXT("BehaviorTreeComponent"));
 	m_BB = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComponent"));
-
 	SetupPerceptionSystem();
 }
 

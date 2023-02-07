@@ -175,6 +175,7 @@ void AEA_MasterEnemy::SetMontages_Trun(UAnimMontage* am_L180, UAnimMontage* am_R
 }
 bool AEA_MasterEnemy::FindWaypoint(const FVector MoveToLocation)
 {
+	WayPoints.Empty();
 	UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), MoveToLocation);
 	if (0 >= Path->GetPathLength()) return false;
 
@@ -352,6 +353,10 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 {
 	if (!MoveCheck()) return true;
 	if (IsHit()) return true;
+	if (MoveToLocation != WayPoints.Last())
+	{
+		CustomMoveStart(MoveToLocation);
+	}
 
 	FVector NextWaypoint = GetNextMovePoint();
 	if (NextWaypoint == FVector::ZeroVector) return true;
