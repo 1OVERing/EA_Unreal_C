@@ -42,8 +42,6 @@ EBTNodeResult::Type UBTT_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Owner
 	}
 
 	return EBTNodeResult::InProgress;
-	
-	return EBTNodeResult::Type();
 }
 void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {

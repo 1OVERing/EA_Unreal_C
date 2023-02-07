@@ -25,4 +25,9 @@ public:
 	void PlayStiffen();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	bool PlayCatchAttack(UAnimMontage* montage,FName sectionName);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+	float PlayAttack();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+	bool AttackEndCheck();
 };

@@ -326,6 +326,7 @@ void AEA_MasterEnemy::SprintCheck()
 	}
 }
 #pragma endregion
+
 #pragma region Interface_CombatInteraction
 void AEA_MasterEnemy::PlayKnockBack_Implementation() {}
 void AEA_MasterEnemy::PlayStiffen_Implementation() {}
@@ -338,6 +339,17 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 	HitTime = montage->GetSectionLength(montage->GetSectionIndex(sectionName));
 	SetHitTimer(HitTime);
 	return true;
+}
+
+float AEA_MasterEnemy::PlayAttack_Implementation()
+{
+	GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Red, TEXT("AttackStart"));
+	return 0.1f;
+}
+bool AEA_MasterEnemy::AttackEndCheck_Implementation()
+{
+	GEngine->AddOnScreenDebugMessage(9919, 10.f, FColor::Red, TEXT("Attacking"));
+	return false;
 }
 #pragma endregion
 #pragma region Interface_AIMove

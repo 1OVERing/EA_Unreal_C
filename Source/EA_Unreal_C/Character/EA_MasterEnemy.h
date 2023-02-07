@@ -120,6 +120,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 		bool PlayCatchAttack(UAnimMontage* montage, FName sectionName);
 	bool PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName);
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+		float PlayAttack();
+	float PlayAttack_Implementation();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+		bool AttackEndCheck();
+	bool AttackEndCheck_Implementation();
+
 #pragma endregion
 #pragma region Interface_AIMove
 public:
