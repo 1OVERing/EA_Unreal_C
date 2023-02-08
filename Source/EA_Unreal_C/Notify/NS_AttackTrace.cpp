@@ -8,10 +8,8 @@
 #include "NiagarafunctionLibrary.h"
 #include "../Interface/I_CombatInteraction.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "../Global/GlobalCombat.h"
 
-#define TraceDrawTime 0.1f
-
-#define CurrentTraceChannel ECC_GameTraceChannel1
 
 void UNS_AttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration)
 {
@@ -103,11 +101,11 @@ TMap<AActor*, FHitResult> UNS_AttackTrace::Trace(const UMeshComponent* MeshComp)
 void UNS_AttackTrace::RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FHitResult>& SaveOutHit, int FirstIndex, int SecondIndex)
 {
 	TArray<FHitResult> hits;
-
+	ECollisionChannel TraceChannel = (TraceType == ECurrentTrace::Player) ? PlayerTraceChannel : EnemyTraceChannel;
 	DrawDebugLine(MeshComp->GetWorld(), TraceLocations[FirstIndex], TraceLocations[SecondIndex], FColor::Red, false, TraceDrawTime);
 	FCollisionQueryParams Traceparam;
 	Traceparam.AddIgnoredActors(HittedActor);
-	if (MeshComp->GetWorld()->LineTraceMultiByChannel(hits, TraceLocations[FirstIndex], TraceLocations[SecondIndex], CurrentTraceChannel, Traceparam))
+	if (MeshComp->GetWorld()->LineTraceMultiByChannel(hits, TraceLocations[FirstIndex], TraceLocations[SecondIndex], TraceChannel, Traceparam))
 	{
 		for (auto hit : hits)
 		{

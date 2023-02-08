@@ -3,6 +3,8 @@
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "../../Interface/I_AIMovement.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 
 UBTT_MoveToTarget::UBTT_MoveToTarget(FObjectInitializer const& ObjectInitializer)
 {
@@ -18,9 +20,22 @@ EBTNodeResult::Type UBTT_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Owner
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return EBTNodeResult::Failed;
 	}
-	APawn* Owner = OwnerComp.GetAIOwner()->GetPawn();
-	AActor* Target = Cast<AActor>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(MoveToTarget.SelectedKeyName));
-	if(!Target) return EBTNodeResult::Failed;
+
+	ACharacter* Owner = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	ACharacter* Target = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(MoveToTarget.SelectedKeyName));
+
+	if(!Owner || !Target) return EBTNodeResult::Failed;
+
+	float Range = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName);
+
+	float Distance = FVector2D::Distance(FVector2D(Owner->GetActorLocation()), FVector2D(Target->GetActorLocation()));
+	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	Distance -= Radius;
+	if (Range >= Distance)
+	{
+		return EBTNodeResult::Succeeded;
+	}
+
 
 
 	FVector Location = Target->GetActorLocation();
@@ -46,8 +61,8 @@ EBTNodeResult::Type UBTT_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Owner
 void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	Super::TickTask(OwnerComp, NodeMemory,DeltaSeconds);
-	AActor* Target = Cast<AActor>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(MoveToTarget.SelectedKeyName));
-	APawn* Owner = OwnerComp.GetAIOwner()->GetPawn();
+	ACharacter* Owner = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	ACharacter* Target = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(MoveToTarget.SelectedKeyName));
 
 	if (!Target || !Owner)
 	{
@@ -74,6 +89,8 @@ void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	}
 
 	float Distance = FVector::Distance(Target->GetActorLocation(),Owner->GetActorLocation());
+	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	Distance -= Radius;
 
 	if (Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
 	{

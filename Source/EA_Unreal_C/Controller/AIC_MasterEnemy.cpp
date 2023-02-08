@@ -58,17 +58,22 @@ void AAIC_MasterEnemy::SetBB_TargetActor(AActor* Actor)
 	GetBlackboard()->SetValueAsObject("TargetActor",Actor);
 }
 
+void AAIC_MasterEnemy::SetBB_AllowableRange(float allowablerange)
+{
+	GetBlackboard()->SetValueAsFloat("AllowableRange", allowablerange);
+}
+
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)
 {
 	if (stimulus.WasSuccessfullySensed())
 	{
-		OnSightTarget.Broadcast(UpdatedActor);
 		SetBB_TargetActor(UpdatedActor);
+		OnSightTarget.Broadcast(UpdatedActor);
 	}
 	else
 	{
-		OnSightTarget.Broadcast(nullptr);
 		SetBB_TargetActor(nullptr);
+		OnSightTarget.Broadcast(nullptr);
 	}
 }
 

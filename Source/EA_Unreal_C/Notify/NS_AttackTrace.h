@@ -14,6 +14,14 @@ enum class EWeaponType : uint8
 	Twinblades UMETA(DisplayName = "Twinblades"),
 };
 
+UENUM(BlueprintType)
+enum class ECurrentTrace : uint8
+{
+	None UMETA(DisplayName = "None"),
+	Player UMETA(DisplayName = "Player"),
+	Enemy UMETA(DisplayName = "Enemy")
+};
+
 UCLASS(Blueprintable, BlueprintType)
 class UNS_AttackTrace : public UAnimNotifyState
 {
@@ -28,10 +36,10 @@ public:
 
 	void SetTraceLocation(const UMeshComponent* MeshComp);
 	TMap<AActor*, FHitResult> Trace(const UMeshComponent* MeshComp);
-	void RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FHitResult>& SaveOutHit,int FirstIndex,int SecondIndex);
+	void RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FHitResult>& SaveOutHit, int FirstIndex, int SecondIndex);
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		float AttackDamage =1.f;
+		float AttackDamage = 1.f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		EWeaponType WeaponType;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -49,5 +57,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		UAnimMontage* TargetMontage = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool MontageLookAt = false;
+		bool MontageLookAt = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		ECurrentTrace TraceType = ECurrentTrace::Player;
 };

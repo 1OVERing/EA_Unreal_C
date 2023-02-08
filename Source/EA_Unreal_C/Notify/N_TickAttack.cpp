@@ -6,10 +6,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "../Global/GlobalCombat.h"
 
-
-#define PlayerTraceChannel ECC_GameTraceChannel1
-#define EnemyTraceChannel ECC_GameTraceChannel2
 
 void UN_TickAttack::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {

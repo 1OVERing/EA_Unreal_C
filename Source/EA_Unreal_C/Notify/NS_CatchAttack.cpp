@@ -4,9 +4,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Character.h"
-
-#define PlayerTraceChannel ECC_GameTraceChannel1
-#define EnemyTraceChannel ECC_GameTraceChannel2
+#include "../Global/GlobalCombat.h"
 
 void UNS_CatchAttack::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
 {

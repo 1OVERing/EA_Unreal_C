@@ -5,6 +5,7 @@
 #include "Kismet/KismetStringLibrary.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
+#include "../Global/GlobalCombat.h"
 
 AEA_MasterEnemy::AEA_MasterEnemy()
 {
@@ -44,7 +45,7 @@ void AEA_MasterEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	AnimInstance = Cast<UEA_MasterAnimInstance>(GetMesh()->GetAnimInstance());
-	AnimInstance->OnMontageBlendingOut.AddDynamic(this,&AEA_MasterEnemy::MontageBledOut);
+	AnimInstance->OnMontageBlendingOut.AddDynamic(this, &AEA_MasterEnemy::MontageBledOut);
 	EnemyController = Cast<AAIC_MasterEnemy>(GetController());
 	EnemyController->OnSightTarget.AddDynamic(this, &AEA_MasterEnemy::SightTarget);
 	if (!AnimInstance || !EnemyController)
@@ -57,6 +58,19 @@ void AEA_MasterEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+
+
+	if (EnemyController->GetBB_TargetActor() && CurrentSkillIndex != -1)
+	{
+		ACharacter* Target = Cast<ACharacter>(EnemyController->GetBB_TargetActor());
+
+		float Distance = FVector2D::Distance(FVector2D(GetActorLocation()), FVector2D(Target->GetActorLocation()));
+		float Radius = GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+		Distance -= Radius;
+
+		GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Green, UKismetStringLibrary::Conv_FloatToString(Distance));
+		GEngine->AddOnScreenDebugMessage(9939, 10.f, FColor::Green, UKismetStringLibrary::Conv_FloatToString(SkillSet[CurrentSkillIndex].AllowableRange));
+	}
 }
 void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -74,18 +88,64 @@ void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backw
 	AM_Hit_Right = Right;
 	AM_Hit_Left = Left;
 }
-void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip)
+void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip, TArray<struct FSkillSet> Skills)
 {
 	AM_Equip = Equip;
+	SkillSet.Empty();
+	SkillSet = Skills;
+}
+void AEA_MasterEnemy::SetNextAttack()
+{
+	if (EnemyController->GetBB_TargetActor())
+	{
+		float TargetDistance = GetTargetDistance();
+		int BestSkillIndex = -1;
+		float BestDistance = -1;
+		// 여기까지
+		for (int i = 0; i < SkillSet.Num(); ++i)
+		{
+			if (BestDistance == -1)
+			{
+				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
+				BestSkillIndex = i;
+			}
+			else if (BestDistance < 0 && BestDistance < (TargetDistance - SkillSet[i].AllowableRange))
+			{
+				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
+				BestSkillIndex = i;
+			}
+			else if (BestDistance > (TargetDistance - SkillSet[i].AllowableRange) && 0 < (TargetDistance - SkillSet[i].AllowableRange))
+			{
+				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
+				BestSkillIndex = i;
+			}
+		}
+		CurrentSkillIndex = BestSkillIndex;
+	}
+	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
+
+	EnemyController->SetBB_AllowableRange(SkillSet[CurrentSkillIndex].AllowableRange);
+}
+float AEA_MasterEnemy::GetTargetDistance()
+{
+	if (!EnemyController->GetBB_TargetActor()) return -1.f;
+
+	ACharacter* Target = Cast<ACharacter>(EnemyController->GetBB_TargetActor());
+
+	float Distance = FVector2D::Distance(FVector2D(GetActorLocation()), FVector2D(Target->GetActorLocation()));
+	float Radius = GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	Distance -= Radius;
+
+	return Distance;
 }
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if (CanHit())
 	{
-		if(DamageCauser) PlayHitAnimMontage(DamageCauser);
+		if (DamageCauser) PlayHitAnimMontage(DamageCauser);
 
-	
-	
+
+
 	}
 	return 1.f;
 }
@@ -138,10 +198,11 @@ void AEA_MasterEnemy::SightTarget_Implementation(AActor* SightTarget)
 			WeaponEquip(true);
 			AnimInstance->SetCombatMode(true);
 		}
+		SetNextAttack();
 	}
 	else
 	{
-		SetHitTimer(PlayAnimMontage(AM_Equip, 1.f,TEXT("UnEquip")));
+		SetHitTimer(PlayAnimMontage(AM_Equip, 1.f, TEXT("UnEquip")));
 		AnimInstance->SetCombatMode(false);
 	}
 }
@@ -227,7 +288,7 @@ bool AEA_MasterEnemy::PlayCombatMove()
 	Dir.Y = Dir.Y - 1.f;
 	Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
 	Dir.Y *= 90.f;
-	
+
 	if (!InRotation() && Dir.Y <= 100.f)
 	{// LookAtRotation
 		float speed = 100.f;
@@ -241,7 +302,7 @@ bool AEA_MasterEnemy::PlayCombatMove()
 		}
 		else
 		{
-			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed,0.f));
+			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
 		}
 	}
 	else if (!InRotation() && Dir.Y > 100.f)
@@ -255,14 +316,14 @@ bool AEA_MasterEnemy::PlayCombatMove()
 }
 FVector2D AEA_MasterEnemy::FindVectorToDirection(const FVector& Location)
 {
-	FVector2D TargetVector2D = FVector2D (Location);
+	FVector2D TargetVector2D = FVector2D(Location);
 	FVector2D OwnerVector2D = FVector2D(GetActorLocation());
 
 	FVector2D DirVector = TargetVector2D - OwnerVector2D;
 
 	DirVector.Normalize(0.0001f);
 
-	float ForwardScale = UKismetMathLibrary::DotProduct2D(DirVector,FVector2D(GetActorForwardVector()));
+	float ForwardScale = UKismetMathLibrary::DotProduct2D(DirVector, FVector2D(GetActorForwardVector()));
 	float RightScale = UKismetMathLibrary::DotProduct2D(DirVector, FVector2D(GetActorRightVector()));
 
 	ForwardScale = UKismetMathLibrary::Acos(ForwardScale);
@@ -270,9 +331,9 @@ FVector2D AEA_MasterEnemy::FindVectorToDirection(const FVector& Location)
 
 	ForwardScale = UKismetMathLibrary::RadiansToDegrees(ForwardScale);
 	RightScale = UKismetMathLibrary::RadiansToDegrees(RightScale);
-	
-	ForwardScale =ForwardScale / 180;
-	RightScale	 =RightScale / 180;
+
+	ForwardScale = ForwardScale / 180;
+	RightScale = RightScale / 180;
 
 	ForwardScale = UKismetMathLibrary::Lerp(1.f, -1.f, ForwardScale);
 	RightScale = UKismetMathLibrary::Lerp(1.f, -1.f, RightScale);
@@ -335,7 +396,7 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 	if (!CanHit()) return false;
 	StopAnimMontage();
 	float HitTime = 0.f;
-	PlayAnimMontage(montage,1.f,sectionName);
+	PlayAnimMontage(montage, 1.f, sectionName);
 	HitTime = montage->GetSectionLength(montage->GetSectionIndex(sectionName));
 	SetHitTimer(HitTime);
 	return true;
@@ -343,7 +404,8 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 
 float AEA_MasterEnemy::PlayAttack_Implementation()
 {
-	GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Red, TEXT("AttackStart"));
+	SetNextAttack();
+	GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Red, UKismetStringLibrary::Conv_IntToString(CurrentSkillIndex));
 	return 0.1f;
 }
 bool AEA_MasterEnemy::AttackEndCheck_Implementation()
@@ -379,8 +441,8 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 	else
 	{
 		float lookAt = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WayPoints[0]).Yaw;
-		this->SetActorRotation(FRotator(0.f,lookAt, 0.f));
-		AnimInstance->SetMovementScale(FVector2D(0.f,1.f));
+		this->SetActorRotation(FRotator(0.f, lookAt, 0.f));
+		AnimInstance->SetMovementScale(FVector2D(0.f, 1.f));
 	}
 	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());
 }

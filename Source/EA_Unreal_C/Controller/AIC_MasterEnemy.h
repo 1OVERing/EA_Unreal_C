@@ -31,6 +31,8 @@ public:
 		FORCEINLINE AActor* GetBB_TargetActor();
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE void SetBB_TargetActor(AActor* Actor);
+	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
+		FORCEINLINE void SetBB_AllowableRange(float allowablerange);
 #pragma endregion
 private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))

@@ -75,11 +75,19 @@ protected:
 		TObjectPtr<UAnimMontage> AM_Hit_Left;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 	TObjectPtr<UAnimMontage> AM_Equip;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Combat")
+		TArray<struct FSkillSet> SkillSet;
+	int CurrentSkillIndex = -1;
 public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 		FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip);
+	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip,TArray<struct FSkillSet> Skills);
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void SetNextAttack();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	float GetTargetDistance();
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void WeaponEquip(bool equip);
