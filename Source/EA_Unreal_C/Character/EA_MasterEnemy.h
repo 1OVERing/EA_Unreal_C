@@ -58,8 +58,8 @@ public:
 		float FindAngle(const FVector TargetLocation);
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void PlayRotationMontage(FVector2D Angle);
-	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Movement")
-		FVector2D FindVectorToDirection(const FVector& Location);
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		bool RotationCheck();
 #pragma endregion
 #pragma region Combat
 protected:
@@ -84,8 +84,6 @@ public:
 		FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip,TArray<struct FSkillSet> Skills);
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void SetNextAttack();
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float GetTargetDistance();
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -129,6 +127,9 @@ public:
 		bool PlayCatchAttack(UAnimMontage* montage, FName sectionName);
 	bool PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName);
 	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+	void SetNextAttack();
+	void SetNextAttack_Implementation();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 		float PlayAttack();
 	float PlayAttack_Implementation();

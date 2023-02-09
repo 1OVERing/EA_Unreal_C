@@ -6,6 +6,7 @@
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 #include "../Global/GlobalCombat.h"
+#include "../Global/GlobalMath.h"
 
 AEA_MasterEnemy::AEA_MasterEnemy()
 {
@@ -57,20 +58,6 @@ void AEA_MasterEnemy::BeginPlay()
 void AEA_MasterEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-
-
-	if (EnemyController->GetBB_TargetActor() && CurrentSkillIndex != -1)
-	{
-		ACharacter* Target = Cast<ACharacter>(EnemyController->GetBB_TargetActor());
-
-		float Distance = FVector2D::Distance(FVector2D(GetActorLocation()), FVector2D(Target->GetActorLocation()));
-		float Radius = GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
-		Distance -= Radius;
-
-		GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Green, UKismetStringLibrary::Conv_FloatToString(Distance));
-		GEngine->AddOnScreenDebugMessage(9939, 10.f, FColor::Green, UKismetStringLibrary::Conv_FloatToString(SkillSet[CurrentSkillIndex].AllowableRange));
-	}
 }
 void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -93,38 +80,6 @@ void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip, TArray<struct FSk
 	AM_Equip = Equip;
 	SkillSet.Empty();
 	SkillSet = Skills;
-}
-void AEA_MasterEnemy::SetNextAttack()
-{
-	if (EnemyController->GetBB_TargetActor())
-	{
-		float TargetDistance = GetTargetDistance();
-		int BestSkillIndex = -1;
-		float BestDistance = -1;
-		// 여기까지
-		for (int i = 0; i < SkillSet.Num(); ++i)
-		{
-			if (BestDistance == -1)
-			{
-				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
-				BestSkillIndex = i;
-			}
-			else if (BestDistance < 0 && BestDistance < (TargetDistance - SkillSet[i].AllowableRange))
-			{
-				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
-				BestSkillIndex = i;
-			}
-			else if (BestDistance > (TargetDistance - SkillSet[i].AllowableRange) && 0 < (TargetDistance - SkillSet[i].AllowableRange))
-			{
-				BestDistance = TargetDistance - SkillSet[i].AllowableRange;
-				BestSkillIndex = i;
-			}
-		}
-		CurrentSkillIndex = BestSkillIndex;
-	}
-	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
-
-	EnemyController->SetBB_AllowableRange(SkillSet[CurrentSkillIndex].AllowableRange);
 }
 float AEA_MasterEnemy::GetTargetDistance()
 {
@@ -168,7 +123,7 @@ void AEA_MasterEnemy::PlayHitAnimMontage(const AActor* Causer)
 	}
 
 	StopAnimMontage();
-	FVector2D Dir = FindVectorToDirection(Causer->GetActorLocation());
+	FVector2D Dir = CustomMath::FindVectorToDirection(this,Causer->GetActorLocation());
 	float HitTime = 0.f;
 	if (Dir.Y > 0.5f)
 	{
@@ -227,7 +182,7 @@ bool AEA_MasterEnemy::IsHitReaction()
 {
 	return HitTimer.IsValid();
 }
-#pragma endregion 
+#pragma endregion
 #pragma region Movement
 void AEA_MasterEnemy::SetMontages_Trun(UAnimMontage* am_L180, UAnimMontage* am_R180)
 {
@@ -284,61 +239,46 @@ bool AEA_MasterEnemy::PlayCombatMove()
 
 	FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
 
-	FVector2D Dir = FindVectorToDirection(Target->GetActorLocation());
+	FVector2D Dir = CustomMath::FindVectorToDirection(this,Target->GetActorLocation());
 	Dir.Y = Dir.Y - 1.f;
 	Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
 	Dir.Y *= 90.f;
+	bool RotationClear = false;
+	if (Dir.Y >= 20.f)
+	{
+		if (!InRotation() && Dir.Y <= 100.f)
+		{// LookAtRotation
+			float speed = 100.f;
+			speed *= GetWorld()->GetDeltaSeconds();
 
-	if (!InRotation() && Dir.Y <= 100.f)
-	{// LookAtRotation
-		float speed = 100.f;
-		speed *= GetWorld()->GetDeltaSeconds();
+			float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
 
-		float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
-
-		if (RotationDir >= 0)
-		{
-			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+			if (RotationDir >= 0)
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+			}
+			else
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+			}
 		}
-		else
-		{
-			this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+		else if (!InRotation() && Dir.Y > 100.f)
+		{// PlayMontage
+			PlayRotationMontage(Dir);
 		}
 	}
-	else if (!InRotation() && Dir.Y > 100.f)
-	{// PlayMontage
-		PlayRotationMontage(Dir);
+	else RotationClear = true;
+
+	float TargetDistance = 0.f;
+
+	if (!WayPoints.IsEmpty())
+	{
+		AnimInstance->SetMovementScale(CustomMath::FindVectorToDirection(this, WayPoints[0]));
+		TargetDistance =  FVector::Distance(GetActorLocation(), WayPoints.Last());
 	}
+	else AnimInstance->SetMovementScale(FVector2D::ZeroVector);
 
-	AnimInstance->SetMovementScale(FindVectorToDirection(WayPoints[0]));
-
-	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());
-}
-FVector2D AEA_MasterEnemy::FindVectorToDirection(const FVector& Location)
-{
-	FVector2D TargetVector2D = FVector2D(Location);
-	FVector2D OwnerVector2D = FVector2D(GetActorLocation());
-
-	FVector2D DirVector = TargetVector2D - OwnerVector2D;
-
-	DirVector.Normalize(0.0001f);
-
-	float ForwardScale = UKismetMathLibrary::DotProduct2D(DirVector, FVector2D(GetActorForwardVector()));
-	float RightScale = UKismetMathLibrary::DotProduct2D(DirVector, FVector2D(GetActorRightVector()));
-
-	ForwardScale = UKismetMathLibrary::Acos(ForwardScale);
-	RightScale = UKismetMathLibrary::Acos(RightScale);
-
-	ForwardScale = UKismetMathLibrary::RadiansToDegrees(ForwardScale);
-	RightScale = UKismetMathLibrary::RadiansToDegrees(RightScale);
-
-	ForwardScale = ForwardScale / 180;
-	RightScale = RightScale / 180;
-
-	ForwardScale = UKismetMathLibrary::Lerp(1.f, -1.f, ForwardScale);
-	RightScale = UKismetMathLibrary::Lerp(1.f, -1.f, RightScale);
-
-	return FVector2D(RightScale, ForwardScale);
+	return (1.f >= TargetDistance && RotationClear);
 }
 float AEA_MasterEnemy::FindAngle(const FVector TargetLocation)
 {
@@ -362,6 +302,17 @@ void AEA_MasterEnemy::PlayRotationMontage(FVector2D Angle)
 	{
 		PlayAnimMontage(AM_TrunL180);
 	}
+}
+bool AEA_MasterEnemy::RotationCheck()
+{
+	if (::IsValid(EnemyController->GetBB_TargetActor()))
+	{
+		float Angle = ::CustomMath::GetTargetAngle(this, EnemyController->GetBB_TargetActor()->GetActorLocation());
+
+		if (Angle <= 20.f) return true;
+		else return false;
+	}
+	else return true;
 }
 void AEA_MasterEnemy::SetSprint(bool spint)
 {
@@ -402,15 +353,49 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 	return true;
 }
 
+void AEA_MasterEnemy::SetNextAttack_Implementation()
+{
+	if (EnemyController->GetBB_TargetActor())
+	{
+		float TargetDistance = GetTargetDistance();
+		int BestSkillIndex = -1;
+		float BestDistance = -1;
+
+		TArray<int> indexs;
+		TArray<int> negativeIndexs;
+
+		// 거리에 따른 즉발 가능 스킬과 아닌 스킬을 구분
+		for (int i = 0; i < SkillSet.Num(); ++i)
+		{
+			float Range = TargetDistance - SkillSet[i].AllowableRange;
+			(Range >= 0) ? indexs.Emplace(i) : negativeIndexs.Emplace(i);
+		}
+
+		// 구분된 스킬중 즉발스킬을 우선적으로 랜덤으로 착출하여 세팅
+		if (!indexs.IsEmpty())
+		{// 즉발 가능
+			indexs.Emplace(-1);
+			int randomIndex = UKismetMathLibrary::RandomInteger(indexs.Num());
+
+			// 이동 후 로직 강제 실행
+			if (indexs[randomIndex] == -1 && !negativeIndexs.IsEmpty()) CurrentSkillIndex = UKismetMathLibrary::RandomInteger(negativeIndexs.Num());
+
+			else CurrentSkillIndex = randomIndex;
+		}
+		// 이동 후 공격
+		else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(negativeIndexs.Num());
+
+	}
+	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
+
+	EnemyController->SetBB_AllowableRange(SkillSet[CurrentSkillIndex].AllowableRange);
+}
 float AEA_MasterEnemy::PlayAttack_Implementation()
 {
-	SetNextAttack();
-	GEngine->AddOnScreenDebugMessage(9929, 10.f, FColor::Red, UKismetStringLibrary::Conv_IntToString(CurrentSkillIndex));
-	return 0.1f;
+	return PlayAnimMontage(SkillSet[CurrentSkillIndex].montage);
 }
 bool AEA_MasterEnemy::AttackEndCheck_Implementation()
 {
-	GEngine->AddOnScreenDebugMessage(9919, 10.f, FColor::Red, TEXT("Attacking"));
 	return false;
 }
 #pragma endregion
@@ -427,13 +412,14 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 {
 	if (!MoveCheck()) return true;
 	if (IsHit()) return true;
-	if (MoveToLocation != WayPoints.Last())
+	if (!WayPoints.IsEmpty() && MoveToLocation != WayPoints.Last())
 	{
 		CustomMoveStart(MoveToLocation);
 	}
 
 	FVector NextWaypoint = GetNextMovePoint();
-	if (NextWaypoint == FVector::ZeroVector) return true;
+	
+	if (NextWaypoint == FVector::ZeroVector && RotationCheck()) return true;
 
 	SprintCheck();
 

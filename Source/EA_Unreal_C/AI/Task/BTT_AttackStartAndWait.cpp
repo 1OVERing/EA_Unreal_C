@@ -43,7 +43,6 @@ EBTNodeResult::Type UBTT_AttackStartAndWait::ExecuteTask(UBehaviorTreeComponent&
 
 	return EBTNodeResult::InProgress;
 }
-
 void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
@@ -55,23 +54,30 @@ void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
 		return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 	}
 	APawn* Owner = OwnerComp.GetAIOwner()->GetPawn();
-	if (!Owner) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
-
+	if (!::IsValid(Owner)) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+	
 	if (UKismetSystemLibrary::DoesImplementInterface(Owner, UI_CombatInteraction::StaticClass()))
 	{
 		II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Owner);
 		bool AttackEnd = _interface->Execute_AttackEndCheck(Owner);
 
-		if (AttackEnd) return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		if (AttackEnd)
+		{
+			_interface->Execute_SetNextAttack(Owner);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+			return;
+		}
 
 		TotalTimer -= DeltaSeconds;
 
-		if(TotalTimer <= 0.f)FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		if (TotalTimer <= 0.f)
+		{
+			_interface->Execute_SetNextAttack(Owner);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+		}
 	}
 	else return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
-
 }
-
 EBTNodeResult::Type UBTT_AttackStartAndWait::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	Super::AbortTask(OwnerComp, NodeMemory);

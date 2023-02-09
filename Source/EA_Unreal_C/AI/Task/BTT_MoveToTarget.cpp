@@ -4,7 +4,10 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "../../Interface/I_AIMovement.h"
 #include "GameFramework/Character.h"
+#include "kismet/KismetMathLibrary.h"
 #include "Components/CapsuleComponent.h"
+#include "../../Global/GlobalMath.h"
+#include "kismet/KismetStringLibrary.h"
 
 UBTT_MoveToTarget::UBTT_MoveToTarget(FObjectInitializer const& ObjectInitializer)
 {
@@ -31,7 +34,15 @@ EBTNodeResult::Type UBTT_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Owner
 	float Distance = FVector2D::Distance(FVector2D(Owner->GetActorLocation()), FVector2D(Target->GetActorLocation()));
 	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
 	Distance -= Radius;
-	if (Range >= Distance)
+
+	FVector2D Dir = CustomMath::FindVectorToDirection(Owner,Target->GetActorLocation());
+	Dir.Y = Dir.Y - 1.f;
+	Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
+	Dir.Y *= 90.f;
+	bool RotationClear = false;
+	if (25.f >= Dir.Y) RotationClear = true;
+
+	if (Range >= Distance && RotationClear)
 	{
 		return EBTNodeResult::Succeeded;
 	}
@@ -92,7 +103,9 @@ void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
 	Distance -= Radius;
 
-	if (Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
+	float Angle = ::CustomMath::GetTargetAngle(Owner, Target->GetActorLocation());
+
+	if (Angle <= 20.f && Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
 	{
 		_interface->Execute_CustomMoveEnd(Owner, Location);
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
