@@ -51,15 +51,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		const FVector GetNextMovePoint();
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool PlayCombatMove();
-	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void SprintCheck();
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Movement")
 		float FindAngle(const FVector TargetLocation);
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void PlayRotationMontage(FVector2D Angle);
-	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool RotationCheck();
+	
+	bool RotationCheck(const FVector& TargetLocation);
+	FORCEINLINE bool DistanceCheck(const FVector& TargetLocation);
+	void SetRotation(const FVector& TargetLocation);
+	void SetMove(const FVector& TargetLocation);
 #pragma endregion
 #pragma region Combat
 protected:

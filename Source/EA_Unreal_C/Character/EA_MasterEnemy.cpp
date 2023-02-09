@@ -7,7 +7,9 @@
 #include "NavigationPath.h"
 #include "../Global/GlobalCombat.h"
 #include "../Global/GlobalMath.h"
-
+#define RotationAllowableRange 5.f
+#define DistanceAllowableRange 0.f
+#define RotationSpeed 100.f
 AEA_MasterEnemy::AEA_MasterEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -123,7 +125,7 @@ void AEA_MasterEnemy::PlayHitAnimMontage(const AActor* Causer)
 	}
 
 	StopAnimMontage();
-	FVector2D Dir = CustomMath::FindVectorToDirection(this,Causer->GetActorLocation());
+	FVector2D Dir = CustomMath::FindVectorToDirection(this, Causer->GetActorLocation());
 	float HitTime = 0.f;
 	if (Dir.Y > 0.5f)
 	{
@@ -233,53 +235,6 @@ const FVector AEA_MasterEnemy::GetNextMovePoint()
 
 	return WayPoints[0];
 }
-bool AEA_MasterEnemy::PlayCombatMove()
-{
-	AActor* Target = EnemyController->GetBB_TargetActor();
-
-	FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
-
-	FVector2D Dir = CustomMath::FindVectorToDirection(this,Target->GetActorLocation());
-	Dir.Y = Dir.Y - 1.f;
-	Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
-	Dir.Y *= 90.f;
-	bool RotationClear = false;
-	if (Dir.Y >= 20.f)
-	{
-		if (!InRotation() && Dir.Y <= 100.f)
-		{// LookAtRotation
-			float speed = 100.f;
-			speed *= GetWorld()->GetDeltaSeconds();
-
-			float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
-
-			if (RotationDir >= 0)
-			{
-				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
-			}
-			else
-			{
-				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
-			}
-		}
-		else if (!InRotation() && Dir.Y > 100.f)
-		{// PlayMontage
-			PlayRotationMontage(Dir);
-		}
-	}
-	else RotationClear = true;
-
-	float TargetDistance = 0.f;
-
-	if (!WayPoints.IsEmpty())
-	{
-		AnimInstance->SetMovementScale(CustomMath::FindVectorToDirection(this, WayPoints[0]));
-		TargetDistance =  FVector::Distance(GetActorLocation(), WayPoints.Last());
-	}
-	else AnimInstance->SetMovementScale(FVector2D::ZeroVector);
-
-	return (1.f >= TargetDistance && RotationClear);
-}
 float AEA_MasterEnemy::FindAngle(const FVector TargetLocation)
 {
 	FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetLocation);
@@ -303,16 +258,120 @@ void AEA_MasterEnemy::PlayRotationMontage(FVector2D Angle)
 		PlayAnimMontage(AM_TrunL180);
 	}
 }
-bool AEA_MasterEnemy::RotationCheck()
+bool AEA_MasterEnemy::RotationCheck(const FVector& TargetLocation)
 {
 	if (::IsValid(EnemyController->GetBB_TargetActor()))
 	{
 		float Angle = ::CustomMath::GetTargetAngle(this, EnemyController->GetBB_TargetActor()->GetActorLocation());
 
-		if (Angle <= 20.f) return true;
+		if (Angle <= RotationAllowableRange) return true;
 		else return false;
 	}
-	else return true;
+	else
+	{
+		float Angle = ::CustomMath::GetTargetAngle(this, TargetLocation);
+		if (Angle <= RotationAllowableRange) return true;
+		else return false;
+	}
+}
+bool AEA_MasterEnemy::DistanceCheck(const FVector& TargetLocation)
+{
+	bool zeroMove = WayPoints.IsEmpty();
+	if (zeroMove)
+	{
+		AnimInstance->SetMovementScale(FVector2D::ZeroVector);
+		return true;
+	}
+	float Distance = FVector2D::Distance(FVector2D(this->GetActorLocation()), FVector2D(TargetLocation));
+	return (Distance <= DistanceAllowableRange);
+}
+void AEA_MasterEnemy::SetRotation(const FVector& TargetLocation)
+{
+	FVector2D Dir;
+
+	if (AnimInstance->GetCombatMode() && ::IsValid(EnemyController->GetBB_TargetActor()))
+	{
+		Dir = CustomMath::FindVectorToDirection(this, EnemyController->GetBB_TargetActor()->GetActorLocation());
+		Dir.Y = Dir.Y - 1.f;
+		Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
+		Dir.Y *= 90.f;
+
+		if (Dir.Y <= 45.f && !InRotation())
+		{
+			FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), EnemyController->GetBB_TargetActor()->GetActorLocation());
+			float speed = RotationSpeed * GetWorld()->GetDeltaSeconds();
+			float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
+
+			if (RotationDir >= 0)
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+			}
+			else
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+			}
+		}
+		else if(!InRotation()) PlayRotationMontage(Dir);
+		else
+		{
+			if (Dir.Y <= 10.f)
+			{
+				StopAnimMontage();
+			}
+		}
+		/*if (Dir.Y >= 150.f) PlayRotationMontage(Dir);
+		else
+		{
+			FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), EnemyController->GetBB_TargetActor()->GetActorLocation());
+			float speed = RotationSpeed * GetWorld()->GetDeltaSeconds();
+			float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
+
+			if (RotationDir >= 0)
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+			}
+			else
+			{
+				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+			}
+		}*/
+	}
+	else if (!AnimInstance->GetCombatMode() && !WayPoints.IsEmpty())
+	{
+		float LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WayPoints[0]).Yaw;
+		
+		SetActorRotation(FRotator(GetActorRotation().Pitch, LookAtRotator, GetActorRotation().Roll));
+		/*Dir = CustomMath::FindVectorToDirection(this, WayPoints[0]);
+		Dir.Y = Dir.Y - 1.f;
+		Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
+		Dir.Y *= 90.f;
+		
+		FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WayPoints[0]);
+		float speed = RotationSpeed * GetWorld()->GetDeltaSeconds();
+		float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
+		bool Forward = CustomMath::FindVectorToDirection(this, WayPoints[0]).Y >= 0;
+		GEngine->AddOnScreenDebugMessage(12312, 1.f, FColor::Red, UKismetStringLibrary::Conv_FloatToString(Forward));
+		if (RotationDir >= 0)
+		{
+			if(Forward) this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+			else this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+			
+		}
+		else
+		{
+			if (Forward) this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
+			else this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
+		}*/
+	}
+}
+void AEA_MasterEnemy::SetMove(const FVector& TargetLocation)
+{
+	if (!WayPoints.IsEmpty() && GetNextMovePoint() != FVector::ZeroVector)
+	{
+		FVector2D MoveScale = CustomMath::FindVectorToDirection(this, GetNextMovePoint());
+		AnimInstance->SetMovementScale(MoveScale);
+	}
+	else AnimInstance->SetMovementScale(FVector2D::ZeroVector);
 }
 void AEA_MasterEnemy::SetSprint(bool spint)
 {
@@ -330,12 +389,13 @@ void AEA_MasterEnemy::SprintCheck()
 			(TargetDistance > 300.f) ? SetSprint(true) : SetSprint(false);
 		}
 	}
-	else
+	else if (!WayPoints.IsEmpty())
 	{
 		FVector TargetLocation2 = WayPoints.Last();
 		float TargetDistance = FVector2D::Distance(FVector2D(TargetLocation2), FVector2D(GetActorLocation()));
 		(TargetDistance > 300.f) ? SetSprint(true) : SetSprint(false);
 	}
+	else SetSprint(false);
 }
 #pragma endregion
 
@@ -387,6 +447,7 @@ void AEA_MasterEnemy::SetNextAttack_Implementation()
 
 	}
 	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
+	CurrentSkillIndex = UKismetMathLibrary::Clamp(CurrentSkillIndex, 0, SkillSet.Num() - 1);
 
 	EnemyController->SetBB_AllowableRange(SkillSet[CurrentSkillIndex].AllowableRange);
 }
@@ -416,12 +477,26 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 	{
 		CustomMoveStart(MoveToLocation);
 	}
+	// 1. 회전 체크
+	// 2. 무브 체크
+	// 3. 전투용 무브와 노말무브 따로 설정
+	// 4. 회전이 안끝났는데 무브가 끝나면 회전 강제 회전
 
-	FVector NextWaypoint = GetNextMovePoint();
-	
-	if (NextWaypoint == FVector::ZeroVector && RotationCheck()) return true;
+	// 1. 회전체크
+	bool RotCheck = RotationCheck(MoveToLocation);
+	if (!RotCheck) SetRotation(MoveToLocation);
+	// 2. 무브체크
+	bool DisCheck = DistanceCheck(MoveToLocation);
+	if (!DisCheck) SetMove(MoveToLocation);
 
 	SprintCheck();
+
+	return RotCheck && DisCheck && !InRotation();
+	/*FVector NextWaypoint = GetNextMovePoint();
+
+	if (NextWaypoint == FVector::ZeroVector && RotationCheck()) return true;
+
+
 
 	if (AnimInstance->GetCombatMode()) return PlayCombatMove();
 	else
@@ -430,7 +505,7 @@ bool AEA_MasterEnemy::CustomMoveTo_Implementation(FVector MoveToLocation)
 		this->SetActorRotation(FRotator(0.f, lookAt, 0.f));
 		AnimInstance->SetMovementScale(FVector2D(0.f, 1.f));
 	}
-	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());
+	return 1.f >= FVector::Distance(GetActorLocation(), WayPoints.Last());*/
 }
 bool AEA_MasterEnemy::CustomMoveEnd_Implementation(FVector MoveToLocation)
 {

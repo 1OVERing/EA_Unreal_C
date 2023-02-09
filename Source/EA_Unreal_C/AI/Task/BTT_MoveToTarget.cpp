@@ -81,13 +81,17 @@ void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 		return;
 	}
 
+	float Distance = FVector::Distance(Target->GetActorLocation(),Owner->GetActorLocation());
+	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	Distance -= Radius;
+
 	FVector Location = Target->GetActorLocation();
 	II_AIMovement* _interface = Cast<II_AIMovement>(Owner);
 
 	if (UKismetSystemLibrary::DoesImplementInterface(Owner, UI_AIMovement::StaticClass()))
 	{
 		bool Finish = _interface->Execute_CustomMoveTo(Owner, Location);
-		if (Finish)
+		if (Finish && Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
 		{
 			_interface->Execute_CustomMoveEnd(Owner, Location);
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
@@ -97,18 +101,6 @@ void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	{
 		_interface->Execute_CustomMoveEnd(Owner, Location);
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
-	}
-
-	float Distance = FVector::Distance(Target->GetActorLocation(),Owner->GetActorLocation());
-	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
-	Distance -= Radius;
-
-	float Angle = ::CustomMath::GetTargetAngle(Owner, Target->GetActorLocation());
-
-	if (Angle <= 20.f && Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
-	{
-		_interface->Execute_CustomMoveEnd(Owner, Location);
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	}
 }
 EBTNodeResult::Type UBTT_MoveToTarget::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
