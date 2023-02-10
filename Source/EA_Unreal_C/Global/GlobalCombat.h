@@ -12,12 +12,14 @@ struct FSkillSet
 {
 	GENERATED_BODY()
 public:
-	FSkillSet():Name(FName()), AllowableRange(0.f) {}
+	FSkillSet():Name(FName()), AllowableMinRange(0.f), AllowableMaxRange(0.f) {}
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	FName Name;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<UAnimMontage> montage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AllowableMinRange;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	float AllowableRange;
+	float AllowableMaxRange;
 };

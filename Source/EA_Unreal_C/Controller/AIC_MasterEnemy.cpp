@@ -58,9 +58,14 @@ void AAIC_MasterEnemy::SetBB_TargetActor(AActor* Actor)
 	GetBlackboard()->SetValueAsObject("TargetActor",Actor);
 }
 
-void AAIC_MasterEnemy::SetBB_AllowableRange(float allowablerange)
+void AAIC_MasterEnemy::SetBB_AllowableMinRange(float allowableminrange)
 {
-	GetBlackboard()->SetValueAsFloat("AllowableRange", allowablerange);
+	GetBlackboard()->SetValueAsFloat("AllowableMinRange", allowableminrange);
+}
+
+void AAIC_MasterEnemy::SetBB_AllowableMaxRange(float allowablemaxrange)
+{
+	GetBlackboard()->SetValueAsFloat("AllowableMaxRange", allowablemaxrange);
 }
 
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)
@@ -82,7 +87,7 @@ void AAIC_MasterEnemy::SetupPerceptionSystem()
 	AIPerceptionSight = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComponent")));
 
-	AIPerceptionSight->SightRadius = 500.f;
+	AIPerceptionSight->SightRadius = 1000.f;
 	AIPerceptionSight->LoseSightRadius = AIPerceptionSight->SightRadius + 250.f;
 	AIPerceptionSight->PeripheralVisionAngleDegrees = 75.f;
 	AIPerceptionSight->SetMaxAge(0.f);

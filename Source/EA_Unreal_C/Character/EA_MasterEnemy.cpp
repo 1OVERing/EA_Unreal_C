@@ -101,10 +101,10 @@ float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& Damag
 	{
 		if (DamageCauser) PlayHitAnimMontage(DamageCauser);
 
-
-
+		SightTarget(DamageCauser);
+		EnemyController->SetBB_TargetActor(DamageCauser);
 	}
-	return 1.f;
+	return Damage;
 }
 void AEA_MasterEnemy::WeaponEquip(bool equip)
 {
@@ -155,7 +155,7 @@ void AEA_MasterEnemy::SightTarget_Implementation(AActor* SightTarget)
 			WeaponEquip(true);
 			AnimInstance->SetCombatMode(true);
 		}
-		SetNextAttack();
+		this->SetNextAttack();
 	}
 	else
 	{
@@ -226,7 +226,7 @@ const FVector AEA_MasterEnemy::GetNextMovePoint()
 	if (WayPoints.IsEmpty()) return FVector::ZeroVector;
 	float TargetDistance = UKismetMathLibrary::Distance2D(FVector2D(GetActorLocation().X, GetActorLocation().Y), FVector2D(WayPoints[0].X, WayPoints[0].Y));
 
-	while (100.f > TargetDistance)
+	while (10.f >= TargetDistance)
 	{
 		WayPoints.RemoveAt(0);
 		if (WayPoints.IsEmpty()) return FVector::ZeroVector;
@@ -427,7 +427,7 @@ void AEA_MasterEnemy::SetNextAttack_Implementation()
 		// 거리에 따른 즉발 가능 스킬과 아닌 스킬을 구분
 		for (int i = 0; i < SkillSet.Num(); ++i)
 		{
-			float Range = TargetDistance - SkillSet[i].AllowableRange;
+			float Range = TargetDistance - SkillSet[i].AllowableMinRange;
 			(Range >= 0) ? indexs.Emplace(i) : negativeIndexs.Emplace(i);
 		}
 
@@ -449,7 +449,7 @@ void AEA_MasterEnemy::SetNextAttack_Implementation()
 	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
 	CurrentSkillIndex = UKismetMathLibrary::Clamp(CurrentSkillIndex, 0, SkillSet.Num() - 1);
 
-	EnemyController->SetBB_AllowableRange(SkillSet[CurrentSkillIndex].AllowableRange);
+	EnemyController->SetBB_AllowableMaxRange(SkillSet[CurrentSkillIndex].AllowableMaxRange);
 }
 float AEA_MasterEnemy::PlayAttack_Implementation()
 {

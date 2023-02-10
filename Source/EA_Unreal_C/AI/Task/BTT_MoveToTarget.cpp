@@ -29,7 +29,7 @@ EBTNodeResult::Type UBTT_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Owner
 
 	if(!Owner || !Target) return EBTNodeResult::Failed;
 
-	float Range = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName);
+	float Range = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableMaxRange.SelectedKeyName);
 
 	float Distance = FVector2D::Distance(FVector2D(Owner->GetActorLocation()), FVector2D(Target->GetActorLocation()));
 	float Radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius() + Target->GetCapsuleComponent()->GetScaledCapsuleRadius();
@@ -91,7 +91,7 @@ void UBTT_MoveToTarget::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	if (UKismetSystemLibrary::DoesImplementInterface(Owner, UI_AIMovement::StaticClass()))
 	{
 		bool Finish = _interface->Execute_CustomMoveTo(Owner, Location);
-		if (Finish && Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableRange.SelectedKeyName))
+		if (Finish && Distance <= OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsFloat(AllowableMaxRange.SelectedKeyName))
 		{
 			_interface->Execute_CustomMoveEnd(Owner, Location);
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);

@@ -20,6 +20,11 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent& Owner
 	}
 	APawn* Owner = OwnerComp.GetAIOwner()->GetPawn();
 	FVector Location = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsVector(BlackboardKey.SelectedKeyName);
+	AActor* Target = Cast<AActor>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(TargetActor.SelectedKeyName));
+	if (::IsValid(Target))
+	{
+		PrevActorLocation = Target->GetActorLocation();
+	}
 
 	if (UKismetSystemLibrary::DoesImplementInterface(Owner, UI_AIMovement::StaticClass()))
 	{
@@ -43,6 +48,12 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent& Owner
 void UBTT_CustomMoveTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	if (!OwnerComp.GetAIOwner() || !OwnerComp.GetAIOwner()->GetPawn())
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+	}
+	
+	AActor* Target = Cast<AActor>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(TargetActor.SelectedKeyName));
+	if (::IsValid(Target) && PrevActorLocation != Target->GetActorLocation())
 	{
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 	}
