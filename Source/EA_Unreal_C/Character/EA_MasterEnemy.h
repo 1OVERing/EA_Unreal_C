@@ -102,7 +102,8 @@ public:
 		void HitEndTimerFunc();
 		void HitEndTimerFunc_Implementation();
 		void SetHitTimer(float Time);
-
+		UFUNCTION()
+		void ResetSkillRecharge(int SkillIndex);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 		FORCEINLINE bool IsHit();
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Combat")
@@ -129,8 +130,8 @@ public:
 	bool PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName);
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
-	void SetNextAttack();
-	void SetNextAttack_Implementation();
+		bool SetNextAttack();
+	bool SetNextAttack_Implementation();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 		float PlayAttack();
 	float PlayAttack_Implementation();

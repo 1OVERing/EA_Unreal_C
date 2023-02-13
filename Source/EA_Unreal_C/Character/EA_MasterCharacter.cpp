@@ -3,6 +3,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EA_MasterAnimInstance.h"
+#include "Components/CapsuleComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetStringLibrary.h"
@@ -96,6 +97,8 @@ AEA_MasterCharacter::AEA_MasterCharacter()
 		SM_l->AttachToComponent(GetMesh(), Rules, FName("ik_hand_l"));
 		SM_r->AttachToComponent(GetMesh(), Rules, FName("ik_hand_r"));
 	}
+	GetMesh()->SetCollisionProfileName("NoCollision");
+	GetCapsuleComponent()->SetCollisionProfileName("PlayerCharacter");
 #pragma endregion
 #pragma region EnhancedInputSystem
 	if (!IMC_Movement) IMC_Movement = CreateDefaultSubobject<UIMC_Movement>(TEXT("IMC_Movement"));

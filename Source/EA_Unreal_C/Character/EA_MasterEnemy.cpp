@@ -7,6 +7,7 @@
 #include "NavigationPath.h"
 #include "../Global/GlobalCombat.h"
 #include "../Global/GlobalMath.h"
+
 #define RotationAllowableRange 5.f
 #define DistanceAllowableRange 0.f
 #define RotationSpeed 100.f
@@ -171,6 +172,10 @@ void AEA_MasterEnemy::SetHitTimer(float Time)
 {
 	GetWorldTimerManager().ClearTimer(HitTimer);
 	GetWorldTimerManager().SetTimer(HitTimer, this, &AEA_MasterEnemy::HitEndTimerFunc, Time, false);
+}
+void AEA_MasterEnemy::ResetSkillRecharge(int SkillIndex)
+{
+	SkillSet[SkillIndex].RechargeTimeFinish = true;
 }
 bool AEA_MasterEnemy::IsHit()
 {
@@ -413,13 +418,11 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 	return true;
 }
 
-void AEA_MasterEnemy::SetNextAttack_Implementation()
+bool AEA_MasterEnemy::SetNextAttack_Implementation()
 {
-	if (EnemyController->GetBB_TargetActor())
+	if (::IsValid(EnemyController->GetBB_TargetActor()))
 	{
 		float TargetDistance = GetTargetDistance();
-		int BestSkillIndex = -1;
-		float BestDistance = -1;
 
 		TArray<int> indexs;
 		TArray<int> negativeIndexs;
@@ -428,31 +431,42 @@ void AEA_MasterEnemy::SetNextAttack_Implementation()
 		for (int i = 0; i < SkillSet.Num(); ++i)
 		{
 			float Range = TargetDistance - SkillSet[i].AllowableMinRange;
-			(Range >= 0) ? indexs.Emplace(i) : negativeIndexs.Emplace(i);
+			if (SkillSet[i].RechargeTimeFinish) (Range >= 0) ? negativeIndexs.Emplace(i) : indexs.Emplace(i);
 		}
+		if (indexs.IsEmpty() && negativeIndexs.IsEmpty()) return false;
 
 		// 구분된 스킬중 즉발스킬을 우선적으로 랜덤으로 착출하여 세팅
 		if (!indexs.IsEmpty())
 		{// 즉발 가능
-			indexs.Emplace(-1);
 			int randomIndex = UKismetMathLibrary::RandomInteger(indexs.Num());
-
 			// 이동 후 로직 강제 실행
-			if (indexs[randomIndex] == -1 && !negativeIndexs.IsEmpty()) CurrentSkillIndex = UKismetMathLibrary::RandomInteger(negativeIndexs.Num());
-
-			else CurrentSkillIndex = randomIndex;
+			if (UKismetMathLibrary::RandomBool())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
+			else CurrentSkillIndex = indexs[randomIndex];
 		}
 		// 이동 후 공격
-		else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(negativeIndexs.Num());
-
+		else if (!negativeIndexs.IsEmpty())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
 	}
-	else CurrentSkillIndex = UKismetMathLibrary::RandomInteger(SkillSet.Num());
+	else return false;
+
 	CurrentSkillIndex = UKismetMathLibrary::Clamp(CurrentSkillIndex, 0, SkillSet.Num() - 1);
 
 	EnemyController->SetBB_AllowableMaxRange(SkillSet[CurrentSkillIndex].AllowableMaxRange);
+	EnemyController->SetBB_AllowableMinRange(SkillSet[CurrentSkillIndex].AllowableMinRange);
+	return true;
 }
 float AEA_MasterEnemy::PlayAttack_Implementation()
 {
+	if (CurrentSkillIndex == -1) return 0.f;
+
+	if (SkillSet[CurrentSkillIndex].RechargeTime != 0.f)
+	{
+		FTimerHandle LaunchTimer;
+		auto Lambda = FTimerDelegate::CreateUFunction(this,"ResetSkillRecharge",CurrentSkillIndex);
+
+		GetWorld()->GetTimerManager().SetTimer(LaunchTimer, Lambda, SkillSet[CurrentSkillIndex].RechargeTime, false);
+		SkillSet[CurrentSkillIndex].RechargeTimeFinish = false;
+	}
+
 	return PlayAnimMontage(SkillSet[CurrentSkillIndex].montage);
 }
 bool AEA_MasterEnemy::AttackEndCheck_Implementation()

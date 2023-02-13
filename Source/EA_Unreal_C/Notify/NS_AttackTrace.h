@@ -12,6 +12,15 @@ enum class EWeaponType : uint8
 {
 	None UMETA(DisplayName = "None"),
 	Twinblades UMETA(DisplayName = "Twinblades"),
+	Katana UMETA(DisplayName = "Katana"),
+};
+
+UENUM(BlueprintType)
+enum class ETraceShape : uint8
+{
+	None UMETA(DisplayName = "None"),
+	Line UMETA(DisplayName = "Line"),
+	Sphere UMETA(DisplayName = "Sphere"),
 };
 
 UENUM(BlueprintType)
@@ -42,6 +51,13 @@ public:
 		float AttackDamage = 1.f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		EWeaponType WeaponType;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		ECurrentTrace TraceType = ECurrentTrace::Player;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		ETraceShape TraceShape = ETraceShape::Line;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		float SphereRadius = 10.f;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 		TArray<FVector> TraceLocations;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
@@ -58,6 +74,4 @@ public:
 		UAnimMontage* TargetMontage = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		bool MontageLookAt = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-		ECurrentTrace TraceType = ECurrentTrace::Player;
 };

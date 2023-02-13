@@ -27,7 +27,7 @@ public:
 	bool PlayCatchAttack(UAnimMontage* montage,FName sectionName);
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
-	void SetNextAttack();
+	bool SetNextAttack();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
 	float PlayAttack();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")

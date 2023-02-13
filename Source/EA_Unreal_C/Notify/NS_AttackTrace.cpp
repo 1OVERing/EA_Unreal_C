@@ -105,6 +105,10 @@ void UNS_AttackTrace::RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FH
 	DrawDebugLine(MeshComp->GetWorld(), TraceLocations[FirstIndex], TraceLocations[SecondIndex], FColor::Red, false, TraceDrawTime);
 	FCollisionQueryParams Traceparam;
 	Traceparam.AddIgnoredActors(HittedActor);
+	ETraceTypeQuery TraceQuery = UEngineTypes::ConvertToTraceType(TraceChannel);
+	switch (TraceShape)
+	{
+	case ETraceShape::Line:
 	if (MeshComp->GetWorld()->LineTraceMultiByChannel(hits, TraceLocations[FirstIndex], TraceLocations[SecondIndex], TraceChannel, Traceparam))
 	{
 		for (auto hit : hits)
@@ -116,18 +120,50 @@ void UNS_AttackTrace::RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FH
 			}
 		}
 	}
+		break;
+	case ETraceShape::Sphere:
+	if (UKismetSystemLibrary::SphereTraceMulti(MeshComp, TraceLocations[FirstIndex], TraceLocations[SecondIndex], SphereRadius, TraceQuery, false, HittedActor, EDrawDebugTrace::ForDuration, hits, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
+	{
+		for (auto hit : hits)
+		{
+			if (!SaveOutHit.Find(hit.GetActor()))
+			{
+				SaveOutHit.Emplace(hit.GetActor(), hit);
+				HittedActor.AddUnique(hit.GetActor());
+			}
+		}
+	}
+		break;
+	default:
+		break;
+	}
 }
 void UNS_AttackTrace::SetTraceLocation(const UMeshComponent* MeshComp)
 {
+	FName TraceStart;
+	FName TraceEnd;
+	switch (WeaponType)
+	{
+	case EWeaponType::Twinblades:
+		TraceStart = "Twinblades_L_End";
+		TraceEnd = "Twinblades_R_End";
+		break;
+	case EWeaponType::Katana:
+		TraceStart = "Katana_Start";
+		TraceEnd = "Katana_End";
+		break;
+	default:
+		break;
+	}
 	if (TraceLocations[0].IsZero() && TraceLocations[1].IsZero())
 	{
-		TraceLocations[0] = MeshComp->GetSocketLocation(TEXT("Twinblades_L_End"));
-		TraceLocations[1] = MeshComp->GetSocketLocation(TEXT("Twinblades_R_End"));
+		TraceLocations[0] = MeshComp->GetSocketLocation(TraceStart);
+		TraceLocations[1] = MeshComp->GetSocketLocation(TraceEnd);
 	}
 
 	TraceLocations[2] = TraceLocations[0];
 	TraceLocations[3] = TraceLocations[1];
 
-	TraceLocations[0] = MeshComp->GetSocketLocation(TEXT("Twinblades_L_End"));
-	TraceLocations[1] = MeshComp->GetSocketLocation(TEXT("Twinblades_R_End"));
+	TraceLocations[0] = MeshComp->GetSocketLocation(TraceStart);
+	TraceLocations[1] = MeshComp->GetSocketLocation(TraceEnd);
 }

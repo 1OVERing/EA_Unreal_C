@@ -47,8 +47,6 @@ void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
-	GEngine->AddOnScreenDebugMessage(9911, 10.f, FColor::Green,UKismetStringLibrary::Conv_FloatToString(TotalTimer));
-
 	if (!OwnerComp.GetAIOwner() || !OwnerComp.GetAIOwner()->GetPawn())
 	{
 		return FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
@@ -63,7 +61,6 @@ void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
 
 		if (AttackEnd)
 		{
-			_interface->Execute_SetNextAttack(Owner);
 			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 			return;
 		}
@@ -72,7 +69,6 @@ void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
 
 		if (TotalTimer <= 0.f)
 		{
-			_interface->Execute_SetNextAttack(Owner);
 			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 		}
 	}
@@ -81,6 +77,5 @@ void UBTT_AttackStartAndWait::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
 EBTNodeResult::Type UBTT_AttackStartAndWait::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	Super::AbortTask(OwnerComp, NodeMemory);
-
     return EBTNodeResult::Succeeded;
 }

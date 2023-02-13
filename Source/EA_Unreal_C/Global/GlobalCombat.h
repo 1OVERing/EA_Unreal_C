@@ -12,7 +12,7 @@ struct FSkillSet
 {
 	GENERATED_BODY()
 public:
-	FSkillSet():Name(FName()), AllowableMinRange(0.f), AllowableMaxRange(0.f) {}
+	FSkillSet():Name(FName()), AllowableMinRange(0.f), AllowableMaxRange(0.f),RechargeTime(0.f),RechargeTimeFinish(true) {}
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	FName Name;
@@ -22,4 +22,8 @@ public:
 	float AllowableMinRange;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float AllowableMaxRange;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RechargeTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool RechargeTimeFinish;
 };
