@@ -86,7 +86,7 @@ protected:
 	int CurrentSkillIndex = -1;
 public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-		FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
+	FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip,TArray<struct FSkillSet> Skills);
 	UFUNCTION(BlueprintCallable, Category = "Combat")

@@ -197,8 +197,10 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 	if (CharacterStat.TakeDamage(Damage) <= 0)
 	{// 죽음
 		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
-
+		UnPossessed();
+		AnimInstance->SetDead(true);
 	}
+	GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, UKismetStringLibrary::Conv_FloatToString(CharacterStat.CurHP));
 }
 bool AEA_MasterEnemy::IsHitReaction()
 {
@@ -436,8 +438,9 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 bool AEA_MasterEnemy::SetNextAttack_Implementation()
 {
 	if (IsHit()) return false;
-	if (::IsValid(EnemyController->GetBB_TargetActor()))
+	if (EnemyController)
 	{
+		if (!EnemyController->GetBB_TargetActor()) return false;
 		float TargetDistance = GetTargetDistance();
 
 		TArray<int> indexs;
@@ -460,11 +463,11 @@ bool AEA_MasterEnemy::SetNextAttack_Implementation()
 			else CurrentSkillIndex = indexs[randomIndex];
 		}
 		// 이동 후 공격
-		else if (!negativeIndexs.IsEmpty())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
-		else
+		else if (!negativeIndexs.IsEmpty())
 		{
-			return false;
+			CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
 		}
+		else return false;
 	}
 	else return false;
 

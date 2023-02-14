@@ -55,6 +55,8 @@ public:
 		void SetCombatMode(bool mode);
 	UFUNCTION(BlueprintCallable)
 		FORCEINLINE bool GetCombatMode();
+	UFUNCTION(BlueprintCallable)
+		FORCEINLINE void SetDead(bool dead);
 	UFUNCTION(BlueprintPure)
 		FORCEINLINE bool GetCurremtMovementIsSprint();
 	UFUNCTION()
@@ -68,5 +70,7 @@ protected:
 		bool CombatMode = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
 		float MaxSprintTime = 2.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement)
+		bool IsDead = false;
 #pragma endregion
 };

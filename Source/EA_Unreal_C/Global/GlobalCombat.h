@@ -13,7 +13,7 @@ struct FCharacterStat
 {
 	GENERATED_BODY()
 public:
-	FCharacterStat():CharacterName(),MaxHP(100.f),MaxStamina(100.f),CurHP(100.f),CurStamina(100.f) {}
+	FCharacterStat():CharacterName(),MaxHP(10.f),MaxStamina(100.f),CurHP(10.f),CurStamina(10.f) {}
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FName CharacterName;

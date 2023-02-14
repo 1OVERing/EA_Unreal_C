@@ -60,6 +60,10 @@ bool UEA_MasterAnimInstance::GetCombatMode()
 {
 	return CombatMode;
 }
+void UEA_MasterAnimInstance::SetDead(bool dead)
+{
+	IsDead = dead;
+}
 bool UEA_MasterAnimInstance::GetCurremtMovementIsSprint()
 {
 	return SprintTime > MaxSprintTime;
