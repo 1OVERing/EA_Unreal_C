@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 
+#include "../Global/GlobalCombat.h"
 #include "../Interface/I_AIMovement.h"
 #include "../Interface/I_CombatInteraction.h"
 
@@ -19,6 +20,9 @@ protected:
 public:
 	virtual void Tick(float DeltaTime) override;
 #pragma region Character
+protected:
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Character")
+		FCharacterStat CharacterStat;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Character")
 		TObjectPtr<USkeletalMeshComponent> SK_Weapon;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Character")
@@ -108,6 +112,8 @@ public:
 		FORCEINLINE bool IsHit();
 	UFUNCTION(BlueprintPure, BlueprintCallable, Category = "Combat")
 		FORCEINLINE bool CanHit();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+		FORCEINLINE void CharacterTakeDamage(float Damage);
 #pragma endregion
 #pragma region Animtion
 protected:

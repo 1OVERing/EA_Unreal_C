@@ -135,6 +135,8 @@ AEA_MasterCharacter::AEA_MasterCharacter()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->JumpZVelocity = 1000.f;
 #pragma endregion
+
+	CharacterStat.ResetCharacterStat();
 }
 void AEA_MasterCharacter::BeginPlay()
 {
@@ -169,6 +171,16 @@ void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* Equ
 {
 	AM_Equip = EquipMontage;
 	AM_Dodge = DodgeMontage;
+}
+float AEA_MasterCharacter::CharacterTakeDamage(float Damage)
+{
+	float RealDamage = Damage;
+	if (CharacterStat.TakeDamage(RealDamage) <= 0)
+	{// Á×À½
+		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
+
+	}
+	return RealDamage;
 }
 #pragma region InputSystemFunc
 void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -208,13 +220,19 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 }
 #pragma endregion
 #pragma region Combat
-void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch)
+float AEA_MasterCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	PlayAnimMontage(AM_NormalHit);
+	return CharacterTakeDamage(Damage);
+}
+void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch,UAnimMontage* Hit)
 {
 	AM_NormalAttack = Normal;
 	AM_BackAttack = Back;
 	AM_LoopAttack = Loop;
 	AM_AirAttack = Air;
 	AM_CatchingAttack = Catch;
+	AM_NormalHit = Hit;
 }
 void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 {

@@ -5,8 +5,8 @@
 #include "Kismet/KismetStringLibrary.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
-#include "../Global/GlobalCombat.h"
 #include "../Global/GlobalMath.h"
+
 
 #define RotationAllowableRange 5.f
 #define DistanceAllowableRange 0.f
@@ -44,6 +44,8 @@ AEA_MasterEnemy::AEA_MasterEnemy()
 #pragma region Controller
 	this->AIControllerClass = AAIC_MasterEnemy::StaticClass();
 #pragma endregion
+
+	CharacterStat.ResetCharacterStat();
 }
 void AEA_MasterEnemy::BeginPlay()
 {
@@ -98,12 +100,17 @@ float AEA_MasterEnemy::GetTargetDistance()
 }
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (CanHit())
+	CharacterTakeDamage(Damage);
+	if (CanHit() && EventInstigator && DamageCauser)
 	{
 		if (DamageCauser) PlayHitAnimMontage(DamageCauser);
 
 		SightTarget(DamageCauser);
 		EnemyController->SetBB_TargetActor(DamageCauser);
+	}
+	else if (!EventInstigator && DamageCauser)
+	{// 데미지 전달만
+		CharacterStat.TakeDamage(Damage);
 	}
 	return Damage;
 }
@@ -184,6 +191,14 @@ bool AEA_MasterEnemy::IsHit()
 bool AEA_MasterEnemy::CanHit()
 {
 	return true;
+}
+void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
+{
+	if (CharacterStat.TakeDamage(Damage) <= 0)
+	{// 죽음
+		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
+
+	}
 }
 bool AEA_MasterEnemy::IsHitReaction()
 {
@@ -420,6 +435,7 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 
 bool AEA_MasterEnemy::SetNextAttack_Implementation()
 {
+	if (IsHit()) return false;
 	if (::IsValid(EnemyController->GetBB_TargetActor()))
 	{
 		float TargetDistance = GetTargetDistance();
@@ -445,6 +461,10 @@ bool AEA_MasterEnemy::SetNextAttack_Implementation()
 		}
 		// 이동 후 공격
 		else if (!negativeIndexs.IsEmpty())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
+		else
+		{
+			return false;
+		}
 	}
 	else return false;
 

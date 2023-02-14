@@ -5,7 +5,31 @@
 #define PlayerTraceChannel ECC_GameTraceChannel1
 #define EnemyTraceChannel ECC_GameTraceChannel2
 
+#define DebugTraceDraw EDrawDebugTrace::ForDuration
 #define TraceDrawTime 0.1f
+
+USTRUCT(BlueprintType)
+struct FCharacterStat
+{
+	GENERATED_BODY()
+public:
+	FCharacterStat():CharacterName(),MaxHP(100.f),MaxStamina(100.f),CurHP(100.f),CurStamina(100.f) {}
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FName CharacterName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float MaxHP;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float MaxStamina;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float CurHP;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float CurStamina;
+public:
+	void ResetCharacterStat();
+	float TakeDamage(float Damage);
+	
+};
 
 USTRUCT(BlueprintType)
 struct FSkillSet

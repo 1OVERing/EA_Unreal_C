@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../Interface/I_CombatInteraction.h"
+#include "../Global/GlobalCombat.h"
+
 #include "EA_MasterCharacter.generated.h"
 
 UCLASS()
@@ -18,8 +20,15 @@ protected:
 	virtual void BeginPlay() override;
 public:	
 	virtual void Tick(float DeltaTime) override;
+protected:
+	FCharacterStat CharacterStat;
+public:
 	UFUNCTION(BlueprintCallable)
 	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
+	UFUNCTION(BlueprintCallable)
+	float CharacterTakeDamage(float Damage);
+
+
 #pragma region InputSystem
 protected: /* Input System Parameter*/
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = EnhancedInputSystem)
@@ -59,8 +68,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat)
 		bool IsCatchingAttack = false;
 protected:
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	UFUNCTION(BlueprintCallable)
-	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*> Catch);
+	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*> Catch, UAnimMontage* Hit);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	TObjectPtr<UAnimMontage> AM_NormalHit;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	UAnimMontage* AM_NormalAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
@@ -98,8 +110,6 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraArm; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 #pragma endregion
-
-
 #pragma region Interface
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")

@@ -122,7 +122,7 @@ void UNS_AttackTrace::RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FH
 	}
 		break;
 	case ETraceShape::Sphere:
-	if (UKismetSystemLibrary::SphereTraceMulti(MeshComp, TraceLocations[FirstIndex], TraceLocations[SecondIndex], SphereRadius, TraceQuery, false, HittedActor, EDrawDebugTrace::ForDuration, hits, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
+	if (UKismetSystemLibrary::SphereTraceMulti(MeshComp, TraceLocations[FirstIndex], TraceLocations[SecondIndex], SphereRadius, TraceQuery, false, HittedActor, DebugTraceDraw, hits, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
 	{
 		for (auto hit : hits)
 		{

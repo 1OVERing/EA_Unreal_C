@@ -18,7 +18,7 @@ void UNS_CatchAttack::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 	FVector TraceEnd = TraceStart + (Owner->GetActorForwardVector() * TraceDistance);
 	TArray<AActor*> Temp;
 	FHitResult Hit;
-	if (UKismetSystemLibrary::CapsuleTraceSingle(MeshComp, TraceStart, TraceEnd, 25.f, 80.f, UEngineTypes::ConvertToTraceType(TraceChannel), false, Temp, EDrawDebugTrace::ForDuration, Hit, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
+	if (UKismetSystemLibrary::CapsuleTraceSingle(MeshComp, TraceStart, TraceEnd, 25.f, 80.f, UEngineTypes::ConvertToTraceType(TraceChannel), false, Temp, DebugTraceDraw, Hit, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
 	{
 		II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Hit.GetActor());
 		if (!_interface->Execute_PlayCatchAttack(Hit.GetActor(), CatchingAttackMontage, FName("Target"))) return;
