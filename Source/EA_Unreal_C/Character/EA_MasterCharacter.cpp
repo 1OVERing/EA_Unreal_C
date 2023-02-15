@@ -13,6 +13,8 @@
 #include "../InputSystem/IMC_Movement.h"
 #include "../InputSystem/IMC_Combat.h"
 
+#define GuardHealingSpeed 1.f
+
 AEA_MasterCharacter::AEA_MasterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -165,7 +167,13 @@ void AEA_MasterCharacter::BeginPlay()
 void AEA_MasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
+	{
+		CharacterStat.CurGuardPoint += DeltaTime * GuardHealingSpeed;
+		if (CharacterStat.CurGuardPoint > CharacterStat.MaxGuardPoint) CharacterStat.CurGuardPoint = CharacterStat.MaxGuardPoint;
+	}
+	GEngine->AddOnScreenDebugMessage(1123, 1.f, FColor::Red, UKismetStringLibrary::Conv_BoolToString(IsGuard()));
+	GEngine->AddOnScreenDebugMessage(1122, 1.f, FColor::Red, UKismetStringLibrary::Conv_FloatToString(CharacterStat.CurGuardPoint));
 }
 void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
 {
@@ -179,6 +187,16 @@ float AEA_MasterCharacter::CharacterTakeDamage(float Damage)
 	{// Á×À½
 		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
 
+	}
+	return RealDamage;
+}
+float AEA_MasterCharacter::CharacterGuardTakeDamage(float Damage)
+{
+	float RealDamage = Damage + 5;
+	CharacterStat.TakeGuardPoint(RealDamage);
+	if (CharacterStat.CurGuardPoint <= 0)
+	{
+		AnimInstance->Montage_JumpToSection("Broken");
 	}
 	return RealDamage;
 }
@@ -225,7 +243,18 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 #pragma region Combat
 float AEA_MasterCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	PlayAnimMontage(AM_NormalHit);
+	if (IsGuard())
+	{
+		AnimInstance->Montage_JumpToSection("Hit");
+		CharacterGuardTakeDamage(Damage);
+		return -1;
+	}
+	else
+	{
+		CharacterTakeDamage(Damage);
+		PlayAnimMontage(AM_NormalHit);
+	}
+
 	return CharacterTakeDamage(Damage);
 }
 void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch,UAnimMontage* Hit, UAnimMontage* guard)
@@ -310,14 +339,15 @@ void AEA_MasterCharacter::CatchAction(const FInputActionValue& Value)
 void AEA_MasterCharacter::GuardAction(const FInputActionValue& Value)
 {
 	if (!IsEquip) return;
-
 	bool playguard = Value.Get<bool>();
 	if (playguard)
 	{
 		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOn"));
 		PlayAnimMontage(AM_Guard);
 	}
-	else if(AM_Guard == GetCurrentMontage())
+	else if(AM_Guard == GetCurrentMontage() &&
+		(AnimInstance->Montage_GetCurrentSection() == "Loop" || AnimInstance->Montage_GetCurrentSection() == "Start" ||
+			AnimInstance->Montage_GetCurrentSection() == "Hit"))
 	{
 		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOff"));
 		AnimInstance->Montage_JumpToSection("End");
@@ -335,7 +365,7 @@ bool AEA_MasterCharacter::IsAttacking()
 }
 bool AEA_MasterCharacter::IsGuard()
 {
-	if (GetCurrentMontage() == AM_Guard && AnimInstance->Montage_GetCurrentSection() == "Loop") return true;
+	if (GetCurrentMontage() == AM_Guard && (AnimInstance->Montage_GetCurrentSection() == "Loop" || AnimInstance->Montage_GetCurrentSection() == "Hit")) return true;
 	return false;
 }
 #pragma endregion

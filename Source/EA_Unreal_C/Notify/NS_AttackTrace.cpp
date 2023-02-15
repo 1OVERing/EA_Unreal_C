@@ -38,42 +38,38 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 		AActor* TargetActor = value.Value.GetActor();
 		HittedActor.AddUnique(TargetActor);
 
+		float Damage = UGameplayStatics::ApplyDamage(TargetActor, AttackDamage, Owner->GetController(), Owner, UDamageType::StaticClass());
 
-		/* PlayEffect */
-		if (HittedEffect)UNiagaraFunctionLibrary::SpawnSystemAtLocation(MeshComp->GetWorld(), HittedEffect, value.Value.ImpactPoint);
-
-		ACharacter* targetCharacter = Cast<ACharacter>(TargetActor);
-		/* Knockback */
-		if (IsKnockback)
+		if (Damage >= 0)
 		{
-			if (targetCharacter)
+			/* PlayEffect */
+			if (HittedEffect)UNiagaraFunctionLibrary::SpawnSystemAtLocation(MeshComp->GetWorld(), HittedEffect, value.Value.ImpactPoint);
+
+			ACharacter* targetCharacter = Cast<ACharacter>(TargetActor);
+			/* Knockback */
+			if (IsKnockback)
 			{
-				FVector KnockbackPower = Owner->GetActorForwardVector() * (KnockbackDistance * 1000.f);
-				KnockbackPower.Z = 0.f;
-				targetCharacter->LaunchCharacter(KnockbackPower, false, false);
+				if (targetCharacter)
+				{
+					FVector KnockbackPower = Owner->GetActorForwardVector() * (KnockbackDistance * 1000.f);
+					KnockbackPower.Z = 0.f;
+					targetCharacter->LaunchCharacter(KnockbackPower, false, false);
+				}
 			}
-		}
 
-		{ // CombatInteraction
-			II_CombatInteraction* _interface = Cast<II_CombatInteraction>(TargetActor);
-			if (IsKnockback) _interface->Execute_PlayKnockBack(TargetActor);
-		}
-		{
-			II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Owner);
-			if(IsStiffen) _interface->Execute_PlayStiffen(Owner);
-		}
-		{
-			UGameplayStatics::ApplyDamage(TargetActor, AttackDamage, Owner->GetController(), Owner, UDamageType::StaticClass());
-		}
-		{
+			{ // CombatInteraction
+				II_CombatInteraction* _interface = Cast<II_CombatInteraction>(TargetActor);
+				if (IsKnockback) _interface->Execute_PlayKnockBack(TargetActor);
+			}
+			{
+				II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Owner);
+				if (IsStiffen) _interface->Execute_PlayStiffen(Owner);
+			}
 			if (MontageLookAt)
 			{
 				FRotator rotation = UKismetMathLibrary::FindLookAtRotation(targetCharacter->GetActorLocation(), Owner->GetActorLocation());
 				targetCharacter->SetActorRotation(rotation);
 			}
-
-
-
 			if (TargetMontage) targetCharacter->PlayAnimMontage(TargetMontage);
 		}
 	}
@@ -85,9 +81,6 @@ void UNS_AttackTrace::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceB
 }
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-void UNS_AttackTrace::AddHittedActor(bool Condition, UPARAM(ref)TArray<FHitResult>& Array) const
-{
-}
 TMap<AActor*, FHitResult> UNS_AttackTrace::Trace(const UMeshComponent* MeshComp)
 {
 	TMap<AActor*, FHitResult> SaveOutHit;
@@ -109,30 +102,30 @@ void UNS_AttackTrace::RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FH
 	switch (TraceShape)
 	{
 	case ETraceShape::Line:
-	if (MeshComp->GetWorld()->LineTraceMultiByChannel(hits, TraceLocations[FirstIndex], TraceLocations[SecondIndex], TraceChannel, Traceparam))
-	{
-		for (auto hit : hits)
+		if (MeshComp->GetWorld()->LineTraceMultiByChannel(hits, TraceLocations[FirstIndex], TraceLocations[SecondIndex], TraceChannel, Traceparam))
 		{
-			if (!SaveOutHit.Find(hit.GetActor()))
+			for (auto hit : hits)
 			{
-				SaveOutHit.Emplace(hit.GetActor(), hit);
-				HittedActor.AddUnique(hit.GetActor());
+				if (!SaveOutHit.Find(hit.GetActor()))
+				{
+					SaveOutHit.Emplace(hit.GetActor(), hit);
+					HittedActor.AddUnique(hit.GetActor());
+				}
 			}
 		}
-	}
 		break;
 	case ETraceShape::Sphere:
-	if (UKismetSystemLibrary::SphereTraceMulti(MeshComp, TraceLocations[FirstIndex], TraceLocations[SecondIndex], SphereRadius, TraceQuery, false, HittedActor, DebugTraceDraw, hits, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
-	{
-		for (auto hit : hits)
+		if (UKismetSystemLibrary::SphereTraceMulti(MeshComp, TraceLocations[FirstIndex], TraceLocations[SecondIndex], SphereRadius, TraceQuery, false, HittedActor, DebugTraceDraw, hits, true, FLinearColor::Red, FLinearColor::Green, 0.1f))
 		{
-			if (!SaveOutHit.Find(hit.GetActor()))
+			for (auto hit : hits)
 			{
-				SaveOutHit.Emplace(hit.GetActor(), hit);
-				HittedActor.AddUnique(hit.GetActor());
+				if (!SaveOutHit.Find(hit.GetActor()))
+				{
+					SaveOutHit.Emplace(hit.GetActor(), hit);
+					HittedActor.AddUnique(hit.GetActor());
+				}
 			}
 		}
-	}
 		break;
 	default:
 		break;

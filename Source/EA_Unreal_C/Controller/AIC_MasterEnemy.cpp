@@ -78,6 +78,12 @@ void AAIC_MasterEnemy::SetBB_DirectAttackEnable(bool Enable)
 	GetBlackboard()->SetValueAsBool("DirectAttack", Enable);
 }
 
+void AAIC_MasterEnemy::SetLogicEnable(bool Enable)
+{
+	if (Enable) this->BrainComponent->RestartLogic();
+	else this->BrainComponent->StopLogic("");
+}
+
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)
 {
 	if (stimulus.WasSuccessfullySensed())

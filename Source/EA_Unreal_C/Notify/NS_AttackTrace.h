@@ -40,9 +40,6 @@ public:
 	virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime)override;
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)override;
 public:
-	UFUNCTION(BlueprintCallable)
-		void AddHittedActor(bool Condition, UPARAM(ref) TArray<FHitResult>& Array) const;
-
 	void SetTraceLocation(const UMeshComponent* MeshComp);
 	TMap<AActor*, FHitResult> Trace(const UMeshComponent* MeshComp);
 	void RealTrace(const UMeshComponent* MeshComp, TMap<AActor*, FHitResult>& SaveOutHit, int FirstIndex, int SecondIndex);

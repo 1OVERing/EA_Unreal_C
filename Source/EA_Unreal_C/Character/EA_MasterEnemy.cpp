@@ -198,8 +198,9 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 	{// Á×À½
 		UnPossessed();
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		this->GetCapsuleComponent()->SetEnableGravity(false);
+		this->GetCharacterMovement()->GravityScale = 0.f;
 		AnimInstance->SetDead(true);
+		EnemyController->SetLogicEnable(false);
 	}
 }
 bool AEA_MasterEnemy::IsHitReaction()

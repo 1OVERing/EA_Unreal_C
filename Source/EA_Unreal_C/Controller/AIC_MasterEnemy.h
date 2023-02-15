@@ -40,6 +40,8 @@ public:
 		FORCEINLINE void SetBB_AllowableMaxRange(float allowablemaxrange);
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE void SetBB_DirectAttackEnable(bool Enable);
+	UFUNCTION(BlueprintCallable)
+		FORCEINLINE void SetLogicEnable(bool Enable);
 #pragma endregion
 private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))

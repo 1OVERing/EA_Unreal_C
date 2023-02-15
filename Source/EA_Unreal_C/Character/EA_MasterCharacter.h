@@ -27,6 +27,8 @@ public:
 	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
 	UFUNCTION(BlueprintCallable)
 	float CharacterTakeDamage(float Damage);
+	UFUNCTION(BlueprintCallable)
+	float CharacterGuardTakeDamage(float Damage);
 #pragma region InputSystem
 protected: /* Input System Parameter*/
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = EnhancedInputSystem)
