@@ -215,6 +215,9 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 			EnhancedInputComponent->BindAction(IMC_Combat->GetRMouseAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::RMouseAction);
 			/* Catch */
 			EnhancedInputComponent->BindAction(IMC_Combat->GetCatchAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::CatchAction);
+			/* Guard */
+			EnhancedInputComponent->BindAction(IMC_Combat->GetGuardAction(), ETriggerEvent::Started, this, &AEA_MasterCharacter::GuardAction);
+			EnhancedInputComponent->BindAction(IMC_Combat->GetGuardAction(), ETriggerEvent::Completed, this, &AEA_MasterCharacter::GuardAction);
 		}
 	}
 }
@@ -225,8 +228,9 @@ float AEA_MasterCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEv
 	PlayAnimMontage(AM_NormalHit);
 	return CharacterTakeDamage(Damage);
 }
-void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch,UAnimMontage* Hit)
+void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch,UAnimMontage* Hit, UAnimMontage* guard)
 {
+	AM_Guard = guard;
 	AM_NormalAttack = Normal;
 	AM_BackAttack = Back;
 	AM_LoopAttack = Loop;
@@ -303,6 +307,22 @@ void AEA_MasterCharacter::CatchAction(const FInputActionValue& Value)
 	GEngine->AddOnScreenDebugMessage(113, 1.f, FColor::Green, UKismetStringLibrary::Conv_IntToString(AmIndex));
 	PlayAnimMontage(AM_CatchingAttack[AmIndex]);
 }
+void AEA_MasterCharacter::GuardAction(const FInputActionValue& Value)
+{
+	if (!IsEquip) return;
+
+	bool playguard = Value.Get<bool>();
+	if (playguard)
+	{
+		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOn"));
+		PlayAnimMontage(AM_Guard);
+	}
+	else if(AM_Guard == GetCurrentMontage())
+	{
+		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOff"));
+		AnimInstance->Montage_JumpToSection("End");
+	}
+}
 bool AEA_MasterCharacter::IsAttacking()
 {
 	if (GetCurrentMontage() == AM_NormalAttack || GetCurrentMontage() == AM_BackAttack ||
@@ -311,6 +331,11 @@ bool AEA_MasterCharacter::IsAttacking()
 	{
 		return true;
 	}
+	return false;
+}
+bool AEA_MasterCharacter::IsGuard()
+{
+	if (GetCurrentMontage() == AM_Guard && AnimInstance->Montage_GetCurrentSection() == "Loop") return true;
 	return false;
 }
 #pragma endregion

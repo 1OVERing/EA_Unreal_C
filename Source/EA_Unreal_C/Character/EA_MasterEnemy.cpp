@@ -11,6 +11,7 @@
 #define RotationAllowableRange 5.f
 #define DistanceAllowableRange 0.f
 #define RotationSpeed 100.f
+
 AEA_MasterEnemy::AEA_MasterEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -71,7 +72,6 @@ void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 		WeaponEquip(AnimInstance->GetCombatMode());
 	}
 }
-
 #pragma region Combat
 void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left)
 {
@@ -100,7 +100,7 @@ float AEA_MasterEnemy::GetTargetDistance()
 }
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	CharacterTakeDamage(Damage);
+	this->CharacterTakeDamage(Damage);
 	if (CanHit() && EventInstigator && DamageCauser)
 	{
 		if (DamageCauser) PlayHitAnimMontage(DamageCauser);
@@ -196,11 +196,11 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 {
 	if (CharacterStat.TakeDamage(Damage) <= 0)
 	{// Á×À½
-		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
 		UnPossessed();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		this->GetCapsuleComponent()->SetEnableGravity(false);
 		AnimInstance->SetDead(true);
 	}
-	GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, UKismetStringLibrary::Conv_FloatToString(CharacterStat.CurHP));
 }
 bool AEA_MasterEnemy::IsHitReaction()
 {
@@ -475,6 +475,16 @@ bool AEA_MasterEnemy::SetNextAttack_Implementation()
 
 	EnemyController->SetBB_AllowableMaxRange(SkillSet[CurrentSkillIndex].AllowableMaxRange);
 	EnemyController->SetBB_AllowableMinRange(SkillSet[CurrentSkillIndex].AllowableMinRange);
+	
+	float TargetDis = GetTargetDistance();
+	if (TargetDis != -1 && TargetDis <= SkillSet[CurrentSkillIndex].AllowableMaxRange && TargetDis >= SkillSet[CurrentSkillIndex].AllowableMinRange)
+	{
+		float LookAt = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),EnemyController->GetBB_TargetActor()->GetActorLocation()).Yaw;
+		SetActorRotation(FRotator(GetActorRotation().Pitch, LookAt, GetActorRotation().Roll));
+		EnemyController->SetBB_DirectAttackEnable(true);
+	}
+	else EnemyController->SetBB_DirectAttackEnable(false);
+
 	return true;
 }
 float AEA_MasterEnemy::PlayAttack_Implementation()

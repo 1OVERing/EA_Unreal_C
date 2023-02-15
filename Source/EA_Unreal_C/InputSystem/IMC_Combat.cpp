@@ -4,7 +4,7 @@
 #include "IA_LMouse.h"
 #include "IA_RMouse.h"
 #include "IA_Catch.h"
-
+#include "IA_Guard.h"
 UIMC_Combat::UIMC_Combat()
 {
 
@@ -42,6 +42,15 @@ UIMC_Combat::UIMC_Combat()
 		{
 			CatchAction = action;
 			this->MapKey(CatchAction, FKey("Q"));
+		}
+	}
+	/* Guard */
+	{
+		static UIA_Guard* guard = NewObject<UIA_Guard>();
+		if (!GuardAction)
+		{
+			GuardAction = guard;
+			this->MapKey(GuardAction, FKey("F"));
 		}
 	}
 }

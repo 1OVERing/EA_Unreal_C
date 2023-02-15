@@ -27,8 +27,6 @@ public:
 	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
 	UFUNCTION(BlueprintCallable)
 	float CharacterTakeDamage(float Damage);
-
-
 #pragma region InputSystem
 protected: /* Input System Parameter*/
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = EnhancedInputSystem)
@@ -46,6 +44,7 @@ protected: /* Input System Bind Function*/
 	void LMouseAction(const struct FInputActionValue& Value);
 	void RMouseAction(const struct FInputActionValue& Value);
 	void CatchAction(const struct FInputActionValue& Value);
+	void GuardAction(const struct FInputActionValue& Value);
 #pragma endregion
 #pragma region Movement
 protected: /* Movement Parameter */
@@ -70,7 +69,9 @@ protected:
 protected:
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	UFUNCTION(BlueprintCallable)
-	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*> Catch, UAnimMontage* Hit);
+	void SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*> Catch, UAnimMontage* Hit, UAnimMontage* guard);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	TObjectPtr<UAnimMontage> AM_Guard;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	TObjectPtr<UAnimMontage> AM_NormalHit;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
@@ -86,6 +87,8 @@ protected:
 public:
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE bool IsAttacking();
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool IsGuard();
 #pragma endregion
 #pragma region Animation
 protected: /* Animation Parameter */

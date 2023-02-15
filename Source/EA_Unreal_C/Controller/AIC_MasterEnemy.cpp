@@ -53,6 +53,11 @@ AActor* AAIC_MasterEnemy::GetBB_TargetActor()
 	return Cast<AActor>(GetBlackboard()->GetValueAsObject("TargetActor"));
 }
 
+bool AAIC_MasterEnemy::GetBB_DirectAttackEnable()
+{
+	return GetBlackboard()->GetValueAsBool("DirectAttack");
+}
+
 void AAIC_MasterEnemy::SetBB_TargetActor(AActor* Actor)
 {
 	GetBlackboard()->SetValueAsObject("TargetActor",Actor);
@@ -66,6 +71,11 @@ void AAIC_MasterEnemy::SetBB_AllowableMinRange(float allowableminrange)
 void AAIC_MasterEnemy::SetBB_AllowableMaxRange(float allowablemaxrange)
 {
 	GetBlackboard()->SetValueAsFloat("AllowableMaxRange", allowablemaxrange);
+}
+
+void AAIC_MasterEnemy::SetBB_DirectAttackEnable(bool Enable)
+{
+	GetBlackboard()->SetValueAsBool("DirectAttack", Enable);
 }
 
 void AAIC_MasterEnemy::Perception_Updated(AActor* UpdatedActor,FAIStimulus const stimulus)

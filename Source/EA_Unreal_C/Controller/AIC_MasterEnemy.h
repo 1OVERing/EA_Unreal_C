@@ -24,17 +24,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE class UBlackboardComponent* GetBlackboard();
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
-		FORCEINLINE void SetBlackboardOriginLocation(const FVector& origin);
-	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE FVector GetBlackboardOriginLocation();
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE AActor* GetBB_TargetActor();
+	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
+		FORCEINLINE bool GetBB_DirectAttackEnable();
+
+	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
+		FORCEINLINE void SetBlackboardOriginLocation(const FVector& origin);
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE void SetBB_TargetActor(AActor* Actor);
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE void SetBB_AllowableMinRange(float allowableminrange);
 	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
 		FORCEINLINE void SetBB_AllowableMaxRange(float allowablemaxrange);
+	UFUNCTION(BlueprintCallable, Category = "BlackBoard")
+		FORCEINLINE void SetBB_DirectAttackEnable(bool Enable);
 #pragma endregion
 private:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
