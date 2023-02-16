@@ -104,6 +104,8 @@ protected:
 	UFUNCTION()
 	void EndedMontage(UAnimMontage* Montage, bool bInterrupted);
 
+
+	bool GetCurrentMontageSectionCheck(int count,...);
 #pragma endregion
 #pragma region Camera
 protected: /* Camera Parameter*/

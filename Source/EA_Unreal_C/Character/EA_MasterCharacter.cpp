@@ -169,11 +169,10 @@ void AEA_MasterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
 	{
+		if (CharacterStat.CurGuardPoint < 0.f) CharacterStat.CurGuardPoint = 0.f;
 		CharacterStat.CurGuardPoint += DeltaTime * GuardHealingSpeed;
 		if (CharacterStat.CurGuardPoint > CharacterStat.MaxGuardPoint) CharacterStat.CurGuardPoint = CharacterStat.MaxGuardPoint;
 	}
-	GEngine->AddOnScreenDebugMessage(1123, 1.f, FColor::Red, UKismetStringLibrary::Conv_BoolToString(IsGuard()));
-	GEngine->AddOnScreenDebugMessage(1122, 1.f, FColor::Red, UKismetStringLibrary::Conv_FloatToString(CharacterStat.CurGuardPoint));
 }
 void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
 {
@@ -274,10 +273,6 @@ void AEA_MasterCharacter::EquipAction(const FInputActionValue& Value)
 		IsEquip = !IsEquip;
 		if (IsEquip) PlayAnimMontage(AM_Equip, 1.f, FName("Equip"));
 		else PlayAnimMontage(AM_Equip, 1.f, FName("UnEquip"));
-
-		FString message;
-		IsEquip ? message = FString("Equip") : message = FString("NotEquip");
-		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor(1, 1, 1), message);
 		AnimInstance->SetCombatMode(IsEquip);
 	}
 }
@@ -340,16 +335,9 @@ void AEA_MasterCharacter::GuardAction(const FInputActionValue& Value)
 {
 	if (!IsEquip) return;
 	bool playguard = Value.Get<bool>();
-	if (playguard)
+	if (playguard)PlayAnimMontage(AM_Guard);
+	else if(AM_Guard == GetCurrentMontage() && GetCurrentMontageSectionCheck(3, FName("Start"), FName("Hit"), FName("Loop")))
 	{
-		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOn"));
-		PlayAnimMontage(AM_Guard);
-	}
-	else if(AM_Guard == GetCurrentMontage() &&
-		(AnimInstance->Montage_GetCurrentSection() == "Loop" || AnimInstance->Montage_GetCurrentSection() == "Start" ||
-			AnimInstance->Montage_GetCurrentSection() == "Hit"))
-	{
-		GEngine->AddOnScreenDebugMessage(3232, 1.f, FColor::Red, TEXT("GuardOff"));
 		AnimInstance->Montage_JumpToSection("End");
 	}
 }
@@ -365,7 +353,7 @@ bool AEA_MasterCharacter::IsAttacking()
 }
 bool AEA_MasterCharacter::IsGuard()
 {
-	if (GetCurrentMontage() == AM_Guard && (AnimInstance->Montage_GetCurrentSection() == "Loop" || AnimInstance->Montage_GetCurrentSection() == "Hit")) return true;
+	if (GetCurrentMontage() == AM_Guard && GetCurrentMontageSectionCheck(2,FName("Hit"), FName("Loop"))) return true;
 	return false;
 }
 #pragma endregion
@@ -438,6 +426,22 @@ void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
 	{
 		if(INDEX_NONE == AM_CatchingAttack.Find(GetCurrentMontage())) IsCatchingAttack = false;
 	}
+}
+bool AEA_MasterCharacter::GetCurrentMontageSectionCheck(int count,...)
+{
+	if (count <= 0) return false;
+
+	va_list list;
+	va_start(list, count);
+
+	for (int i = 0; i < count; ++i) if (AnimInstance->Montage_GetCurrentSection() == va_arg(list, FName))
+	{
+		va_end(list);
+		return true;
+	}
+	
+	va_end(list);
+	return false;
 }
 #pragma endregion
 #pragma region Interface

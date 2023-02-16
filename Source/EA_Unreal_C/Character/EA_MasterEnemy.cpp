@@ -11,6 +11,7 @@
 #define RotationAllowableRange 5.f
 #define DistanceAllowableRange 0.f
 #define RotationSpeed 100.f
+#define GuardTime 10.f
 
 AEA_MasterEnemy::AEA_MasterEnemy()
 {
@@ -60,10 +61,16 @@ void AEA_MasterEnemy::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(999, 10.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
 		this->Destroy();
 	}
+
+	FTimerHandle Timer;
+	GetWorldTimerManager().SetTimer(Timer, this, &AEA_MasterEnemy::PlayGuard, 20.f, true);
 }
 void AEA_MasterEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+
+
 }
 void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -71,6 +78,22 @@ void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 	{
 		WeaponEquip(AnimInstance->GetCombatMode());
 	}
+}
+bool AEA_MasterEnemy::GetCurrentMontageSectionCheck(int count, ...)
+{
+	if (count <= 0) return false;
+
+	va_list list;
+	va_start(list, count);
+
+	for (int i = 0; i < count; ++i) if (AnimInstance->Montage_GetCurrentSection() == va_arg(list, FName))
+	{
+		va_end(list);
+		return true;
+	}
+
+	va_end(list);
+	return false;
 }
 #pragma region Combat
 void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left)
@@ -80,11 +103,12 @@ void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backw
 	AM_Hit_Right = Right;
 	AM_Hit_Left = Left;
 }
-void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip, TArray<struct FSkillSet> Skills)
+void AEA_MasterEnemy::SetMontages_Attacks(UAnimMontage* Equip, UAnimMontage* Guard, TArray<struct FSkillSet> Skills)
 {
 	AM_Equip = Equip;
 	SkillSet.Empty();
 	SkillSet = Skills;
+	AM_Guard = Guard;
 }
 float AEA_MasterEnemy::GetTargetDistance()
 {
@@ -100,6 +124,7 @@ float AEA_MasterEnemy::GetTargetDistance()
 }
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (IsGuard()) return -1;
 	this->CharacterTakeDamage(Damage);
 	if (CanHit() && EventInstigator && DamageCauser)
 	{
@@ -202,6 +227,47 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 		AnimInstance->SetDead(true);
 		EnemyController->SetLogicEnable(false);
 	}
+}
+void AEA_MasterEnemy::PlayGuard()
+{
+	if(IsGuard()) return;
+
+	GetWorldTimerManager().ClearTimer(GuardTimer);
+	PlayAnimMontage(AM_Guard);
+	EnemyController->SetLogicEnable(false);
+	GetWorldTimerManager().SetTimer(GuardTimer, this, &AEA_MasterEnemy::EndGuard, GuardTime, false);
+}
+bool AEA_MasterEnemy::IsGuard()
+{
+	if (GuardTimer.IsValid())
+	{
+		if (AM_Guard == GetCurrentMontage()) return true;
+		else
+		{
+			EndGuard();
+			return false;
+		}
+	}
+	else
+	{
+		if (AM_Guard != GetCurrentMontage()) return false;
+		else
+		{
+			EndGuard();
+			StopAnimMontage();
+			return false;
+		}
+	}
+	return false;
+}
+void AEA_MasterEnemy::EndGuard()
+{
+	GetWorldTimerManager().ClearTimer(GuardTimer);
+	if (GetCurrentMontage() == AM_Guard && !GetCurrentMontageSectionCheck(2, FName("End"),FName("Broken")))
+	{ 
+		AnimInstance->Montage_JumpToSection("End");
+	}
+	EnemyController->SetLogicEnable(true);
 }
 bool AEA_MasterEnemy::IsHitReaction()
 {

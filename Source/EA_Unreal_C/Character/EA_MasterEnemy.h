@@ -71,6 +71,8 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 		FTimerHandle HitTimer;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
+		FTimerHandle GuardTimer;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 		TObjectPtr<UAnimMontage> AM_Hit_Forward;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 		TObjectPtr<UAnimMontage> AM_Hit_Backward;
@@ -80,15 +82,18 @@ protected:
 		TObjectPtr<UAnimMontage> AM_Hit_Left;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
 	TObjectPtr<UAnimMontage> AM_Equip;
-
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Combat")
+		TObjectPtr<UAnimMontage> AM_Guard;
 	UPROPERTY(BlueprintReadWrite, Category = "Combat")
 		TArray<struct FSkillSet> SkillSet;
 	int CurrentSkillIndex = -1;
+
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	FORCEINLINE void SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip,TArray<struct FSkillSet> Skills);
+	FORCEINLINE void SetMontages_Attacks(UAnimMontage* Equip, UAnimMontage* Guard,TArray<struct FSkillSet> Skills);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float GetTargetDistance();
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -114,6 +119,14 @@ public:
 		FORCEINLINE bool CanHit();
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 		FORCEINLINE void CharacterTakeDamage(float Damage);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+		FORCEINLINE void PlayGuard();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+		FORCEINLINE bool IsGuard();
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+		void EndGuard();
+
 #pragma endregion
 #pragma region Animtion
 protected:
@@ -121,6 +134,8 @@ protected:
 
 	UFUNCTION()
 	void MontageBledOut(UAnimMontage* Montage, bool bInterrupted);
+
+	bool GetCurrentMontageSectionCheck(int count, ...);
 #pragma endregion
 
 #pragma region Interface_CombatInteraction
