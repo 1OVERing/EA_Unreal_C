@@ -61,16 +61,20 @@ void AEA_MasterEnemy::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(999, 10.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
 		this->Destroy();
 	}
-
-	FTimerHandle Timer;
-	GetWorldTimerManager().SetTimer(Timer, this, &AEA_MasterEnemy::PlayGuard, 20.f, true);
 }
 void AEA_MasterEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-
-
+	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
+	{
+		CharacterStat.CurGuardPoint = UKismetMathLibrary::FClamp(CharacterStat.CurGuardPoint + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxGuardPoint);
+	}
+	else if(IsGuard()  && ::IsValid(EnemyController->GetBB_TargetActor()))
+	{
+		FRotator Rot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), EnemyController->GetBB_TargetActor()->GetActorLocation());
+		SetActorRotation(FRotator(GetActorRotation().Pitch, Rot.Yaw, GetActorRotation().Roll));
+		GEngine->AddOnScreenDebugMessage(323, 0.1f, FColor::Red, "LookAt!!");
+	}
 }
 void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -124,7 +128,19 @@ float AEA_MasterEnemy::GetTargetDistance()
 }
 float AEA_MasterEnemy::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (IsGuard()) return -1;
+	if (IsGuard())
+	{
+		if (this->CharacterGuardTakeDamage(Damage + 4))
+		{
+			AnimInstance->Montage_JumpToSection("Hit");
+			return 0.f;
+		}
+		else
+		{
+			AnimInstance->Montage_JumpToSection("Broken");
+			return 0;
+		}
+	}
 	this->CharacterTakeDamage(Damage);
 	if (CanHit() && EventInstigator && DamageCauser)
 	{
@@ -228,9 +244,16 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 		EnemyController->SetLogicEnable(false);
 	}
 }
+bool AEA_MasterEnemy::CharacterGuardTakeDamage(float Damage)
+{
+	bool result = false;
+	CharacterStat.TakeGuardPoint(Damage);
+	(CharacterStat.CurGuardPoint > 0) ? result = true : result = false;
+	return result;
+}
 void AEA_MasterEnemy::PlayGuard()
 {
-	if(IsGuard()) return;
+	if (IsGuard()) return;
 
 	GetWorldTimerManager().ClearTimer(GuardTimer);
 	PlayAnimMontage(AM_Guard);
@@ -263,8 +286,8 @@ bool AEA_MasterEnemy::IsGuard()
 void AEA_MasterEnemy::EndGuard()
 {
 	GetWorldTimerManager().ClearTimer(GuardTimer);
-	if (GetCurrentMontage() == AM_Guard && !GetCurrentMontageSectionCheck(2, FName("End"),FName("Broken")))
-	{ 
+	if (GetCurrentMontage() == AM_Guard && !GetCurrentMontageSectionCheck(2, FName("End"), FName("Broken")))
+	{
 		AnimInstance->Montage_JumpToSection("End");
 	}
 	EnemyController->SetLogicEnable(true);
@@ -400,7 +423,7 @@ void AEA_MasterEnemy::SetRotation(const FVector& TargetLocation)
 				this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
 			}
 		}
-		else if(!InRotation()) PlayRotationMontage(Dir);
+		else if (!InRotation()) PlayRotationMontage(Dir);
 		else
 		{
 			if (Dir.Y <= 10.f)
@@ -428,13 +451,13 @@ void AEA_MasterEnemy::SetRotation(const FVector& TargetLocation)
 	else if (!AnimInstance->GetCombatMode() && !WayPoints.IsEmpty())
 	{
 		float LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WayPoints[0]).Yaw;
-		
+
 		SetActorRotation(FRotator(GetActorRotation().Pitch, LookAtRotator, GetActorRotation().Roll));
 		/*Dir = CustomMath::FindVectorToDirection(this, WayPoints[0]);
 		Dir.Y = Dir.Y - 1.f;
 		Dir.Y = UKismetMathLibrary::Abs(Dir.Y);
 		Dir.Y *= 90.f;
-		
+
 		FRotator LookAtRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WayPoints[0]);
 		float speed = RotationSpeed * GetWorld()->GetDeltaSeconds();
 		float RotationDir = LookAtRotator.Yaw - GetActorRotation().Yaw;
@@ -444,7 +467,7 @@ void AEA_MasterEnemy::SetRotation(const FVector& TargetLocation)
 		{
 			if(Forward) this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw + speed, 0.f));
 			else this->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw - speed, 0.f));
-			
+
 		}
 		else
 		{
@@ -504,49 +527,44 @@ bool AEA_MasterEnemy::PlayCatchAttack_Implementation(UAnimMontage* montage, FNam
 
 bool AEA_MasterEnemy::SetNextAttack_Implementation()
 {
-	if (IsHit()) return false;
-	if (EnemyController)
+	if (IsHit() || !EnemyController) return false;
+	if (!EnemyController->GetBB_TargetActor()) return false;
+	float TargetDistance = GetTargetDistance();
+
+	TArray<int> indexs;
+	TArray<int> negativeIndexs;
+	CurrentSkillIndex = -1;
+
+	// 거리에 따른 즉발 가능 스킬과 아닌 스킬을 구분
+	for (int i = 0; i < SkillSet.Num(); ++i)
 	{
-		if (!EnemyController->GetBB_TargetActor()) return false;
-		float TargetDistance = GetTargetDistance();
+		float Range = TargetDistance - SkillSet[i].AllowableMinRange;
+		if (SkillSet[i].RechargeTimeFinish) (Range >= 0) ? negativeIndexs.Emplace(i) : indexs.Emplace(i);
+	}
+	if (indexs.IsEmpty() && negativeIndexs.IsEmpty()) return false;
 
-		TArray<int> indexs;
-		TArray<int> negativeIndexs;
-
-		// 거리에 따른 즉발 가능 스킬과 아닌 스킬을 구분
-		for (int i = 0; i < SkillSet.Num(); ++i)
-		{
-			float Range = TargetDistance - SkillSet[i].AllowableMinRange;
-			if (SkillSet[i].RechargeTimeFinish) (Range >= 0) ? negativeIndexs.Emplace(i) : indexs.Emplace(i);
-		}
-		if (indexs.IsEmpty() && negativeIndexs.IsEmpty()) return false;
-
-		// 구분된 스킬중 즉발스킬을 우선적으로 랜덤으로 착출하여 세팅
-		if (!indexs.IsEmpty())
-		{// 즉발 가능
-			int randomIndex = UKismetMathLibrary::RandomInteger(indexs.Num());
-			// 이동 후 로직 강제 실행
-			if (UKismetMathLibrary::RandomBool())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
-			else CurrentSkillIndex = indexs[randomIndex];
-		}
-		// 이동 후 공격
-		else if (!negativeIndexs.IsEmpty())
-		{
-			CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
-		}
-		else return false;
+	// 구분된 스킬중 즉발스킬을 우선적으로 랜덤으로 착출하여 세팅
+	if (!indexs.IsEmpty())
+	{// 즉발 가능
+		int randomIndex = UKismetMathLibrary::RandomInteger(indexs.Num());
+		// 이동 후 로직 강제 실행
+		if (UKismetMathLibrary::RandomBool() && !negativeIndexs.IsEmpty())CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
+		else CurrentSkillIndex = indexs[randomIndex];
+	}
+	// 이동 후 공격
+	else if (!negativeIndexs.IsEmpty())
+	{
+		CurrentSkillIndex = negativeIndexs[UKismetMathLibrary::RandomInteger(negativeIndexs.Num())];
 	}
 	else return false;
 
-	CurrentSkillIndex = UKismetMathLibrary::Clamp(CurrentSkillIndex, 0, SkillSet.Num() - 1);
-
 	EnemyController->SetBB_AllowableMaxRange(SkillSet[CurrentSkillIndex].AllowableMaxRange);
 	EnemyController->SetBB_AllowableMinRange(SkillSet[CurrentSkillIndex].AllowableMinRange);
-	
+
 	float TargetDis = GetTargetDistance();
 	if (TargetDis != -1 && TargetDis <= SkillSet[CurrentSkillIndex].AllowableMaxRange && TargetDis >= SkillSet[CurrentSkillIndex].AllowableMinRange)
 	{
-		float LookAt = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),EnemyController->GetBB_TargetActor()->GetActorLocation()).Yaw;
+		float LookAt = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), EnemyController->GetBB_TargetActor()->GetActorLocation()).Yaw;
 		SetActorRotation(FRotator(GetActorRotation().Pitch, LookAt, GetActorRotation().Roll));
 		EnemyController->SetBB_DirectAttackEnable(true);
 	}
@@ -558,19 +576,25 @@ float AEA_MasterEnemy::PlayAttack_Implementation()
 {
 	if (CurrentSkillIndex == -1) return 0.f;
 
+	if (UKismetMathLibrary::RandomInteger(3) == 0) // 가드 발생확률 30%
+	{
+		PlayGuard();
+		return -1;
+	}
+
 	if (SkillSet[CurrentSkillIndex].RechargeTime != 0.f)
 	{
 		FTimerHandle LaunchTimer;
-		auto Lambda = FTimerDelegate::CreateUFunction(this,"ResetSkillRecharge",CurrentSkillIndex);
+		auto Lambda = FTimerDelegate::CreateUFunction(this, "ResetSkillRecharge", CurrentSkillIndex);
 
 		GetWorld()->GetTimerManager().SetTimer(LaunchTimer, Lambda, SkillSet[CurrentSkillIndex].RechargeTime, false);
 		SkillSet[CurrentSkillIndex].RechargeTimeFinish = false;
 	}
-
 	return PlayAnimMontage(SkillSet[CurrentSkillIndex].montage);
 }
 bool AEA_MasterEnemy::AttackEndCheck_Implementation()
 {
+	if (IsGuard()) return true;
 	return false;
 }
 #pragma endregion

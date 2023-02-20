@@ -119,6 +119,8 @@ public:
 		FORCEINLINE bool CanHit();
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 		FORCEINLINE void CharacterTakeDamage(float Damage);
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+		FORCEINLINE bool CharacterGuardTakeDamage(float Damage);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 		FORCEINLINE void PlayGuard();

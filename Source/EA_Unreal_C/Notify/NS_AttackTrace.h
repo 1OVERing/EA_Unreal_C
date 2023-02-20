@@ -48,7 +48,8 @@ public:
 		float AttackDamage = 1.f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		EWeaponType WeaponType;
-	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		bool LookAtPlayer = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		ECurrentTrace TraceType = ECurrentTrace::Player;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

@@ -86,11 +86,17 @@ protected:
 	UAnimMontage* AM_AirAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	TArray<UAnimMontage*> AM_CatchingAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	FTimerHandle HitTimer;
 public:
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsAttacking();
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsGuard();
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+		FORCEINLINE bool IsHit();
+	UFUNCTION(BlueprintCallable)
+		FORCEINLINE void PlayHitTimer(float HitTime);
 #pragma endregion
 #pragma region Animation
 protected: /* Animation Parameter */

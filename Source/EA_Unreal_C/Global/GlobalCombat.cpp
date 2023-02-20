@@ -1,4 +1,5 @@
 #include "GlobalCombat.h"
+#include "Kismet/KismetMathLibrary.h"
 
 void FCharacterStat::ResetCharacterStat()
 {
@@ -13,5 +14,5 @@ float FCharacterStat::TakeDamage(float Damage)
 
 float FCharacterStat::TakeGuardPoint(float Damage)
 {
-	return CurGuardPoint -= Damage;
+	return CurGuardPoint = UKismetMathLibrary::FClamp(CurGuardPoint - Damage,0.f,MaxGuardPoint);
 }

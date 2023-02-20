@@ -13,8 +13,6 @@
 #include "../InputSystem/IMC_Movement.h"
 #include "../InputSystem/IMC_Combat.h"
 
-#define GuardHealingSpeed 1.f
-
 AEA_MasterCharacter::AEA_MasterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -169,9 +167,7 @@ void AEA_MasterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
 	{
-		if (CharacterStat.CurGuardPoint < 0.f) CharacterStat.CurGuardPoint = 0.f;
-		CharacterStat.CurGuardPoint += DeltaTime * GuardHealingSpeed;
-		if (CharacterStat.CurGuardPoint > CharacterStat.MaxGuardPoint) CharacterStat.CurGuardPoint = CharacterStat.MaxGuardPoint;
+		CharacterStat.CurGuardPoint = UKismetMathLibrary::FClamp(CharacterStat.CurGuardPoint + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxGuardPoint);
 	}
 }
 void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
@@ -242,21 +238,27 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 #pragma region Combat
 float AEA_MasterCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (GetCurrentMontage() == AM_Dodge) return 0.f;
 	if (IsGuard())
 	{
 		AnimInstance->Montage_JumpToSection("Hit");
 		CharacterGuardTakeDamage(Damage);
-		return -1;
+		return 0.f;
+	}
+	else if (GetCurrentMontage() == AM_Guard &&	GetCurrentMontageSectionCheck(1, FName("Start")))
+	{
+		return -1.f;
 	}
 	else
 	{
 		CharacterTakeDamage(Damage);
-		PlayAnimMontage(AM_NormalHit);
+		float hitTime = PlayAnimMontage(AM_NormalHit);
+		PlayHitTimer(hitTime);
 	}
 
 	return CharacterTakeDamage(Damage);
 }
-void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch,UAnimMontage* Hit, UAnimMontage* guard)
+void AEA_MasterCharacter::SetAttackMontages(UAnimMontage* Normal, UAnimMontage* Back, UAnimMontage* Loop, UAnimMontage* Air, TArray<UAnimMontage*>Catch, UAnimMontage* Hit, UAnimMontage* guard)
 {
 	AM_Guard = guard;
 	AM_NormalAttack = Normal;
@@ -285,7 +287,7 @@ void AEA_MasterCharacter::LMouseAction(const FInputActionValue& Value)
 	}
 	else
 	{
-		if(AnimInstance->GetCurremtMovementIsSprint()) PlayAnimMontage(AM_LoopAttack);
+		if (AnimInstance->GetCurremtMovementIsSprint()) PlayAnimMontage(AM_LoopAttack);
 		else if (MovementScale.Y < 0.f) PlayAnimMontage(AM_BackAttack);
 		else PlayAnimMontage(AM_NormalAttack);
 	}
@@ -307,7 +309,7 @@ void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
 	}
 	else
 	{
-		if(-1 != UKismetStringLibrary::FindSubstring(AnimInstance->Montage_GetCurrentSection(AM_Dodge).ToString(), "Dodge")) return;
+		if (-1 != UKismetStringLibrary::FindSubstring(AnimInstance->Montage_GetCurrentSection(AM_Dodge).ToString(), "Dodge")) return;
 
 		if (MovementScale.Y > 0.f) SectionName = TEXT("Dodge_F");
 		else if (MovementScale.Y < 0.f) SectionName = TEXT("Dodge_B");
@@ -316,15 +318,15 @@ void AEA_MasterCharacter::RMouseAction(const FInputActionValue& Value)
 		else SectionName = TEXT("Dodge_B");
 	}
 
-	PlayAnimMontage(AM_Dodge,1.f,SectionName);
+	PlayAnimMontage(AM_Dodge, 1.f, SectionName);
 }
 void AEA_MasterCharacter::CatchAction(const FInputActionValue& Value)
 {
 	if (!IsEquip || IsAttacking()) return;
 	int MovementNum = 0;
 	if (MovementScale.Y > 0) MovementNum = 0;
-	else if(MovementScale.Y < 0) MovementNum = 1;
-	else if(MovementScale.X != 0) MovementNum = 2;
+	else if (MovementScale.Y < 0) MovementNum = 1;
+	else if (MovementScale.X != 0) MovementNum = 2;
 	else MovementNum = 0;
 
 	int AmIndex = UKismetMathLibrary::Clamp(MovementNum, 0, AM_CatchingAttack.Num() - 1);
@@ -333,10 +335,10 @@ void AEA_MasterCharacter::CatchAction(const FInputActionValue& Value)
 }
 void AEA_MasterCharacter::GuardAction(const FInputActionValue& Value)
 {
-	if (!IsEquip) return;
+	if (!IsEquip || IsHit()) return;
 	bool playguard = Value.Get<bool>();
 	if (playguard)PlayAnimMontage(AM_Guard);
-	else if(AM_Guard == GetCurrentMontage() && GetCurrentMontageSectionCheck(3, FName("Start"), FName("Hit"), FName("Loop")))
+	else if (AM_Guard == GetCurrentMontage() && GetCurrentMontageSectionCheck(3, FName("Start"), FName("Hit"), FName("Loop")))
 	{
 		AnimInstance->Montage_JumpToSection("End");
 	}
@@ -353,8 +355,24 @@ bool AEA_MasterCharacter::IsAttacking()
 }
 bool AEA_MasterCharacter::IsGuard()
 {
-	if (GetCurrentMontage() == AM_Guard && GetCurrentMontageSectionCheck(2,FName("Hit"), FName("Loop"))) return true;
+	if (GetCurrentMontage() == AM_Guard && GetCurrentMontageSectionCheck(2, FName("Hit"), FName("Loop"))) return true;
 	return false;
+}
+bool AEA_MasterCharacter::IsHit()
+{
+	return HitTimer.IsValid();
+}
+void AEA_MasterCharacter::PlayHitTimer(float HitTime)
+{
+	GetWorld()->GetTimerManager().ClearTimer(HitTimer);
+	DisableInput(Cast<APlayerController>(GetController()));
+	AnimInstance->SetMovementScale(FVector2D::ZeroVector);
+	GetWorld()->GetTimerManager().SetTimer(HitTimer, FTimerDelegate::CreateLambda([&]()
+		{
+			this->GetWorld()->GetTimerManager().ClearTimer(HitTimer);
+			this->EnableInput(Cast<APlayerController>(GetController()));
+		}
+	), HitTime * 0.8f,false);
 }
 #pragma endregion
 #pragma region Movement
@@ -424,10 +442,10 @@ void AEA_MasterCharacter::EndedMontage(UAnimMontage* Montage, bool bInterrupted)
 	}
 	if (INDEX_NONE != AM_CatchingAttack.Find(Montage))
 	{
-		if(INDEX_NONE == AM_CatchingAttack.Find(GetCurrentMontage())) IsCatchingAttack = false;
+		if (INDEX_NONE == AM_CatchingAttack.Find(GetCurrentMontage())) IsCatchingAttack = false;
 	}
 }
-bool AEA_MasterCharacter::GetCurrentMontageSectionCheck(int count,...)
+bool AEA_MasterCharacter::GetCurrentMontageSectionCheck(int count, ...)
 {
 	if (count <= 0) return false;
 
@@ -439,7 +457,7 @@ bool AEA_MasterCharacter::GetCurrentMontageSectionCheck(int count,...)
 		va_end(list);
 		return true;
 	}
-	
+
 	va_end(list);
 	return false;
 }
@@ -454,13 +472,17 @@ void AEA_MasterCharacter::PlayStiffen_Implementation()
 	FTimerHandle StiffenTimer;
 
 	GetWorld()->GetTimerManager().
-	SetTimer(StiffenTimer, FTimerDelegate::CreateLambda([&]() {this->CustomTimeDilation = 1.f;}), StiffenTime, false);
+		SetTimer(StiffenTimer, FTimerDelegate::CreateLambda([&]() {this->CustomTimeDilation = 1.f; }), StiffenTime, false);
 }
 bool AEA_MasterCharacter::PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName)
 {
 	StopAnimMontage();
-
-	(0.f != PlayAnimMontage(montage,1.f, sectionName)) ? IsCatchingAttack = true : IsCatchingAttack = false;
+	if (sectionName == FName())
+	{// ³ë¸Ö HitReaction
+		float Hittime = PlayAnimMontage(montage);
+		PlayHitTimer(Hittime);
+	}
+	else (0.f != PlayAnimMontage(montage, 1.f, sectionName)) ? IsCatchingAttack = true : IsCatchingAttack = false;
 	return true;
 }
 #pragma endregion

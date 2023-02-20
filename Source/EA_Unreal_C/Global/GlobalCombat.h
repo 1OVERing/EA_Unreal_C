@@ -5,6 +5,8 @@
 #define PlayerTraceChannel ECC_GameTraceChannel1
 #define EnemyTraceChannel ECC_GameTraceChannel2
 
+
+#define GuardHealingSpeed 1.f
 #define DebugTraceDraw EDrawDebugTrace::ForDuration
 #define TraceDrawTime 0.1f
 

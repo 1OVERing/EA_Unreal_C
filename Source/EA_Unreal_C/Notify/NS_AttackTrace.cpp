@@ -18,6 +18,17 @@ void UNS_AttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenc
 	TraceLocations.Add(FVector(0.f));
 	TraceLocations.Add(FVector(0.f));
 	TraceLocations.Add(FVector(0.f));
+
+	if (LookAtPlayer && ::IsValid(MeshComp->GetOwner()))
+	{
+		ACharacter* player = UGameplayStatics::GetPlayerCharacter(MeshComp, 0);
+		ACharacter* Owner = Cast<ACharacter>(MeshComp->GetOwner());
+		if (::IsValid(player) && ::IsValid(Owner))
+		{
+			float LookAtYaw = UKismetMathLibrary::FindLookAtRotation(Owner->GetActorLocation(), player->GetActorLocation()).Yaw;
+			Owner->SetActorRotation(FRotator(Owner->GetActorRotation().Pitch, LookAtYaw, Owner->GetActorRotation().Roll));
+		}
+	}
 }
 void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime)
 {
@@ -40,7 +51,7 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 
 		float Damage = UGameplayStatics::ApplyDamage(TargetActor, AttackDamage, Owner->GetController(), Owner, UDamageType::StaticClass());
 
-		if (Damage >= 0)
+		if (Damage > 0)
 		{
 			/* PlayEffect */
 			if (HittedEffect)UNiagaraFunctionLibrary::SpawnSystemAtLocation(MeshComp->GetWorld(), HittedEffect, value.Value.ImpactPoint);
@@ -57,20 +68,20 @@ void UNS_AttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequence
 				}
 			}
 
-			{ // CombatInteraction
-				II_CombatInteraction* _interface = Cast<II_CombatInteraction>(TargetActor);
-				if (IsKnockback) _interface->Execute_PlayKnockBack(TargetActor);
-			}
-			{
-				II_CombatInteraction* _interface = Cast<II_CombatInteraction>(Owner);
-				if (IsStiffen) _interface->Execute_PlayStiffen(Owner);
-			}
+			II_CombatInteraction* Owner_interface = Cast<II_CombatInteraction>(Owner);
+			II_CombatInteraction* Target_interface = Cast<II_CombatInteraction>(TargetActor);
+			if (IsStiffen) Owner_interface->Execute_PlayStiffen(Owner);
+			if (IsKnockback) Target_interface->Execute_PlayKnockBack(TargetActor);
 			if (MontageLookAt)
 			{
-				FRotator rotation = UKismetMathLibrary::FindLookAtRotation(targetCharacter->GetActorLocation(), Owner->GetActorLocation());
-				targetCharacter->SetActorRotation(rotation);
+				float LookAt = UKismetMathLibrary::FindLookAtRotation(targetCharacter->GetActorLocation(), Owner->GetActorLocation()).Yaw;
+				targetCharacter->SetActorRotation(FRotator(targetCharacter->GetActorRotation().Pitch, LookAt, targetCharacter->GetActorRotation().Roll));
 			}
-			if (TargetMontage) targetCharacter->PlayAnimMontage(TargetMontage);
+			if (TargetMontage) Target_interface->Execute_PlayCatchAttack(TargetActor,TargetMontage,FName());
+		}
+		else if (Damage == -1)
+		{
+			Owner->GetMesh()->GetAnimInstance()->Montage_JumpToSection("Parrying");
 		}
 	}
 
