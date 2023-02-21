@@ -575,7 +575,7 @@ bool AEA_MasterEnemy::SetNextAttack_Implementation()
 float AEA_MasterEnemy::PlayAttack_Implementation()
 {
 	if (CurrentSkillIndex == -1) return 0.f;
-
+	AnimInstance->SetMovementScale(FVector2D::ZeroVector);
 	if (UKismetMathLibrary::RandomInteger(3) == 0) // 가드 발생확률 30%
 	{
 		PlayGuard();
