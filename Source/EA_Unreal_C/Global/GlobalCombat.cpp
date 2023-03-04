@@ -5,14 +5,13 @@ void FCharacterStat::ResetCharacterStat()
 {
 	CurHP = MaxHP;
 	CurStamina = MaxStamina;
-	CurGuardPoint = MaxGuardPoint;
 }
 float FCharacterStat::TakeDamage(float Damage)
 {
 	return CurHP -= Damage;
 }
 
-float FCharacterStat::TakeGuardPoint(float Damage)
+float FCharacterStat::TakeStaminaPoint(float Damage)
 {
-	return CurGuardPoint = UKismetMathLibrary::FClamp(CurGuardPoint - Damage,0.f,MaxGuardPoint);
+	return CurStamina = UKismetMathLibrary::FClamp(CurStamina - Damage, 0.f, MaxStamina);
 }

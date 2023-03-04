@@ -13,9 +13,17 @@
 #include "../InputSystem/IMC_Movement.h"
 #include "../InputSystem/IMC_Combat.h"
 
+#include "Blueprint/UserWidget.h"
+#include "../UI/CharacterStatusHUD.h"
+
 AEA_MasterCharacter::AEA_MasterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	// HUD
+	HUDClass_CharacterStatus = nullptr;
+	HUD_CharacterStatus = nullptr;
+
 #pragma region MeshSetting
 	/* Face */
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> Face(TEXT("/Game/Characters/PP801_P3/Meshes/Characters/Separates/Heads/SK_Head_Cyber.SK_Head_Cyber"));
@@ -142,6 +150,7 @@ void AEA_MasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Controller
 	if (APlayerController* playercontroller = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playercontroller->GetLocalPlayer()))
@@ -150,6 +159,7 @@ void AEA_MasterCharacter::BeginPlay()
 			subsystem->AddMappingContext(IMC_Combat, 0);
 		}
 	}
+	// AnimInstance
 	{
 		auto Anim = Cast<UEA_MasterAnimInstance>(GetMesh()->GetAnimInstance());
 		if (Anim)
@@ -158,16 +168,29 @@ void AEA_MasterCharacter::BeginPlay()
 			AnimInstance->OnMontageEnded.AddDynamic(this, &AEA_MasterCharacter::EndedMontage);
 		}
 	}
+	// CharacterDelegate
 	{
 		LandedDelegate.AddDynamic(this, &AEA_MasterCharacter::LandedEvent);
+	}
+	// HUD
+	if (IsLocallyControlled() && HUDClass_CharacterStatus)
+	{
+		HUD_CharacterStatus = CreateWidget<UCharacterStatusHUD>(Cast<APlayerController>(GetController()), HUDClass_CharacterStatus);
+		check(HUD_CharacterStatus);
+		HUD_CharacterStatus->AddToPlayerScreen();
+		UpdateHUDCharacterStat();
+		/* virtual void EndPlay()
+			HUD_CharacterStatus->RemoveFromParent();
+			HUD_CharacterStatus = nullptr;
+		*/
 	}
 }
 void AEA_MasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
+	if (!IsGuard() && CharacterStat.CurStamina != CharacterStat.MaxStamina)
 	{
-		CharacterStat.CurGuardPoint = UKismetMathLibrary::FClamp(CharacterStat.CurGuardPoint + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxGuardPoint);
+		CharacterStat.CurStamina = UKismetMathLibrary::FClamp(CharacterStat.CurStamina + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxStamina);
 	}
 }
 void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
@@ -181,19 +204,25 @@ float AEA_MasterCharacter::CharacterTakeDamage(float Damage)
 	if (CharacterStat.TakeDamage(RealDamage) <= 0)
 	{// Á×À½
 		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
-
 	}
+	UpdateHUDCharacterStat();
 	return RealDamage;
 }
 float AEA_MasterCharacter::CharacterGuardTakeDamage(float Damage)
 {
 	float RealDamage = Damage + 5;
-	CharacterStat.TakeGuardPoint(RealDamage);
-	if (CharacterStat.CurGuardPoint <= 0)
+	CharacterStat.TakeStaminaPoint(RealDamage);
+	if (CharacterStat.CurStamina <= 0)
 	{
 		AnimInstance->Montage_JumpToSection("Broken");
 	}
+	UpdateHUDCharacterStat();
 	return RealDamage;
+}
+void AEA_MasterCharacter::UpdateHUDCharacterStat()
+{
+	HUD_CharacterStatus->SetHealth(CharacterStat.CurHP, CharacterStat.MaxHP);
+	HUD_CharacterStatus->SetStamina(CharacterStat.CurStamina, CharacterStat.MaxStamina);
 }
 #pragma region InputSystemFunc
 void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

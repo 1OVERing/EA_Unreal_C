@@ -6,6 +6,9 @@
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
 #include "../Global/GlobalMath.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/WidgetComponent.h"
+#include "../UI/CharacterStatusHUD.h"
 
 
 #define RotationAllowableRange 5.f
@@ -46,7 +49,6 @@ AEA_MasterEnemy::AEA_MasterEnemy()
 #pragma region Controller
 	this->AIControllerClass = AAIC_MasterEnemy::StaticClass();
 #pragma endregion
-
 	CharacterStat.ResetCharacterStat();
 }
 void AEA_MasterEnemy::BeginPlay()
@@ -61,19 +63,47 @@ void AEA_MasterEnemy::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(999, 10.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
 		this->Destroy();
 	}
+
+	// HUD
+	if (HUDClass_CharacterStatus)
+	{
+		HUD_CharacterStatus = CreateWidget<UCharacterStatusHUD>(UGameplayStatics::GetPlayerController(this->GetWorld(),0), HUDClass_CharacterStatus);
+		check(HUD_CharacterStatus);
+		HUD_CharacterStatus->AddToPlayerScreen();
+		UpdateHUDCharacterStat();
+		UWidgetComponent;
+		/* virtual void EndPlay()
+			HUD_CharacterStatus->RemoveFromParent();
+			HUD_CharacterStatus = nullptr;
+		*/
+	}
+	if (HUDClass_CharacterStatus)
+	{
+		HUD_CharacterStatusComp = NewObject<UWidgetComponent>();
+		// HUD_CharacterStatus = CreateWidget<UCharacterStatusHUD>(UGameplayStatics::GetPlayerController(this->GetWorld(), 0), HUDClass_CharacterStatus);
+		// check(HUD_CharacterStatus);
+		HUD_CharacterStatusComp->SetWidgetClass(HUDClass_CharacterStatus);
+		HUD_CharacterStatusComp->SetDrawSize(FVector2D(100.f, 20.f));
+		HUD_CharacterStatusComp->SetWidgetSpace(EWidgetSpace::Screen);
+		// HUD_CharacterStatusComp->SetOwnerPlayer(); 여기까지
+		UpdateHUDCharacterStat();
+		/* virtual void EndPlay()
+			HUD_CharacterStatus->RemoveFromParent();
+			HUD_CharacterStatus = nullptr;
+		*/
+	}
 }
 void AEA_MasterEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (!IsGuard() && CharacterStat.CurGuardPoint != CharacterStat.MaxGuardPoint)
+	if (!IsGuard() && CharacterStat.CurStamina != CharacterStat.MaxStamina)
 	{
-		CharacterStat.CurGuardPoint = UKismetMathLibrary::FClamp(CharacterStat.CurGuardPoint + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxGuardPoint);
+		CharacterStat.CurStamina = UKismetMathLibrary::FClamp(CharacterStat.CurStamina + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxStamina);
 	}
 	else if(IsGuard()  && ::IsValid(EnemyController->GetBB_TargetActor()))
 	{
 		FRotator Rot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), EnemyController->GetBB_TargetActor()->GetActorLocation());
 		SetActorRotation(FRotator(GetActorRotation().Pitch, Rot.Yaw, GetActorRotation().Roll));
-		GEngine->AddOnScreenDebugMessage(323, 0.1f, FColor::Red, "LookAt!!");
 	}
 }
 void AEA_MasterEnemy::MontageBledOut(UAnimMontage* Montage, bool bInterrupted)
@@ -98,6 +128,11 @@ bool AEA_MasterEnemy::GetCurrentMontageSectionCheck(int count, ...)
 
 	va_end(list);
 	return false;
+}
+void AEA_MasterEnemy::UpdateHUDCharacterStat()
+{
+	HUD_CharacterStatus->SetHealth(CharacterStat.CurHP, CharacterStat.MaxHP);
+	HUD_CharacterStatus->SetStamina(CharacterStat.CurStamina, CharacterStat.MaxStamina);
 }
 #pragma region Combat
 void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left)
@@ -247,8 +282,8 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 bool AEA_MasterEnemy::CharacterGuardTakeDamage(float Damage)
 {
 	bool result = false;
-	CharacterStat.TakeGuardPoint(Damage);
-	(CharacterStat.CurGuardPoint > 0) ? result = true : result = false;
+	CharacterStat.TakeStaminaPoint(Damage);
+	(CharacterStat.CurStamina > 0) ? result = true : result = false;
 	return result;
 }
 void AEA_MasterEnemy::PlayGuard()

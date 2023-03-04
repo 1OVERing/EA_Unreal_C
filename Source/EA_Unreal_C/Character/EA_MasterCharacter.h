@@ -21,10 +21,12 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 protected:
+	UPROPERTY(BlueprintReadOnly)
 	FCharacterStat CharacterStat;
 public:
 	UFUNCTION(BlueprintCallable)
 	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
+
 	UFUNCTION(BlueprintCallable)
 	float CharacterTakeDamage(float Damage);
 	UFUNCTION(BlueprintCallable)
@@ -134,6 +136,16 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 	bool PlayCatchAttack(UAnimMontage* montage, FName sectionName);
 	bool PlayCatchAttack_Implementation(UAnimMontage* montage, FName sectionName);
+#pragma endregion
+#pragma region UI
+protected:
+	UPROPERTY(EditAnywhere, Category = "UI")
+		TSubclassOf<class UCharacterStatusHUD> HUDClass_CharacterStatus;
+	UPROPERTY()
+		class UCharacterStatusHUD* HUD_CharacterStatus;
+public:
+	UFUNCTION()
+		void UpdateHUDCharacterStat();
 #pragma endregion
 };
 

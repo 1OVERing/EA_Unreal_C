@@ -139,7 +139,18 @@ protected:
 
 	bool GetCurrentMontageSectionCheck(int count, ...);
 #pragma endregion
-
+#pragma region UI
+protected:
+	UPROPERTY(EditAnywhere, Category = "UI")
+		TSubclassOf<class UCharacterStatusHUD> HUDClass_CharacterStatus;
+	UPROPERTY()
+		class UCharacterStatusHUD* HUD_CharacterStatus;
+	UPROPERTY()
+	class UWidgetComponent* HUD_CharacterStatusComp;
+public:
+	UFUNCTION()
+		void UpdateHUDCharacterStat();
+#pragma endregion
 #pragma region Interface_CombatInteraction
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
