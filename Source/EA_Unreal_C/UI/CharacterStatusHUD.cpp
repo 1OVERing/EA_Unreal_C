@@ -31,6 +31,6 @@ void UCharacterStatusHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 	}
 	else
 	{
-		this->SetRenderOpacity(UKismetMathLibrary::Abs((TargetDistance / 1000.f) - 1));
+		this->SetRenderOpacity(UKismetMathLibrary::FClamp((UKismetMathLibrary::Abs((TargetDistance / 1000.f) - 1) * 2.f),0,1));
 	}
 }
