@@ -50,6 +50,9 @@ AEA_MasterEnemy::AEA_MasterEnemy()
 	this->AIControllerClass = AAIC_MasterEnemy::StaticClass();
 #pragma endregion
 	CharacterStat.ResetCharacterStat();
+
+	HUD_CharacterStatusComp = CreateDefaultSubobject<UWidgetComponent>("UI_CharacterStatus");
+	HUD_CharacterStatusComp->SetupAttachment(GetRootComponent(), "UI_CharacterStatus");
 }
 void AEA_MasterEnemy::BeginPlay()
 {
@@ -63,34 +66,16 @@ void AEA_MasterEnemy::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(999, 10.f, FColor::Red, TEXT("Failed Create AnimInstance & Controller (AEA_MasterEnemy::BeginPlay)"));
 		this->Destroy();
 	}
-
-	// HUD
-	if (HUDClass_CharacterStatus)
+	//HUD
+	HUD_CharacterStatus = Cast<UCharacterStatusHUD>(HUD_CharacterStatusComp->GetWidget());
+	if (!::IsValid(HUD_CharacterStatus)) HUD_CharacterStatus = nullptr;
+	else
 	{
-		HUD_CharacterStatus = CreateWidget<UCharacterStatusHUD>(UGameplayStatics::GetPlayerController(this->GetWorld(),0), HUDClass_CharacterStatus);
-		check(HUD_CharacterStatus);
-		HUD_CharacterStatus->AddToPlayerScreen();
-		UpdateHUDCharacterStat();
-		UWidgetComponent;
-		/* virtual void EndPlay()
-			HUD_CharacterStatus->RemoveFromParent();
-			HUD_CharacterStatus = nullptr;
-		*/
-	}
-	if (HUDClass_CharacterStatus)
-	{
-		HUD_CharacterStatusComp = NewObject<UWidgetComponent>();
-		// HUD_CharacterStatus = CreateWidget<UCharacterStatusHUD>(UGameplayStatics::GetPlayerController(this->GetWorld(), 0), HUDClass_CharacterStatus);
-		// check(HUD_CharacterStatus);
-		HUD_CharacterStatusComp->SetWidgetClass(HUDClass_CharacterStatus);
-		HUD_CharacterStatusComp->SetDrawSize(FVector2D(100.f, 20.f));
 		HUD_CharacterStatusComp->SetWidgetSpace(EWidgetSpace::Screen);
-		// HUD_CharacterStatusComp->SetOwnerPlayer(); 여기까지
+		HUD_CharacterStatusComp->SetTickMode(ETickMode::Automatic);
+		HUD_CharacterStatusComp->SetDrawSize(FVector2D(100.f, 20.f));
+		HUD_CharacterStatus->OwnerActor = this;
 		UpdateHUDCharacterStat();
-		/* virtual void EndPlay()
-			HUD_CharacterStatus->RemoveFromParent();
-			HUD_CharacterStatus = nullptr;
-		*/
 	}
 }
 void AEA_MasterEnemy::Tick(float DeltaTime)
@@ -131,8 +116,11 @@ bool AEA_MasterEnemy::GetCurrentMontageSectionCheck(int count, ...)
 }
 void AEA_MasterEnemy::UpdateHUDCharacterStat()
 {
-	HUD_CharacterStatus->SetHealth(CharacterStat.CurHP, CharacterStat.MaxHP);
-	HUD_CharacterStatus->SetStamina(CharacterStat.CurStamina, CharacterStat.MaxStamina);
+	if (HUD_CharacterStatus)
+	{
+		HUD_CharacterStatus->SetHealth(CharacterStat.CurHP, CharacterStat.MaxHP);
+		HUD_CharacterStatus->SetStamina(CharacterStat.CurStamina, CharacterStat.MaxStamina);
+	}
 }
 #pragma region Combat
 void AEA_MasterEnemy::SetMontages_Hit(UAnimMontage* Forward, UAnimMontage* Backward, UAnimMontage* Right, UAnimMontage* Left)
@@ -278,12 +266,16 @@ void AEA_MasterEnemy::CharacterTakeDamage(float Damage)
 		AnimInstance->SetDead(true);
 		EnemyController->SetLogicEnable(false);
 	}
+
+	UpdateHUDCharacterStat();
 }
 bool AEA_MasterEnemy::CharacterGuardTakeDamage(float Damage)
 {
 	bool result = false;
 	CharacterStat.TakeStaminaPoint(Damage);
 	(CharacterStat.CurStamina > 0) ? result = true : result = false;
+
+	UpdateHUDCharacterStat();
 	return result;
 }
 void AEA_MasterEnemy::PlayGuard()

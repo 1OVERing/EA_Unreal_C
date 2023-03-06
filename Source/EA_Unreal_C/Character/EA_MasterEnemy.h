@@ -141,11 +141,9 @@ protected:
 #pragma endregion
 #pragma region UI
 protected:
-	UPROPERTY(EditAnywhere, Category = "UI")
-		TSubclassOf<class UCharacterStatusHUD> HUDClass_CharacterStatus;
 	UPROPERTY()
 		class UCharacterStatusHUD* HUD_CharacterStatus;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "UI")
 	class UWidgetComponent* HUD_CharacterStatusComp;
 public:
 	UFUNCTION()

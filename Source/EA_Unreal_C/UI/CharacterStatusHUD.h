@@ -16,7 +16,10 @@ class EA_UNREAL_C_API UCharacterStatusHUD : public UUserWidget
 public:
 	void SetHealth(float CurHealth, float MaxHealth);
 	void SetStamina(float CurStamina, float MaxStamina);
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 public:
+	UPROPERTY(EditAnywhere)
+		TObjectPtr<AActor> OwnerActor;
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 		class UProgressBar* HealthBar;
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
