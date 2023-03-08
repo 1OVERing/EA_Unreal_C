@@ -14,7 +14,7 @@
 #define RotationAllowableRange 5.f
 #define DistanceAllowableRange 0.f
 #define RotationSpeed 100.f
-#define GuardTime 10.f
+#define GuardTime 1.f
 
 AEA_MasterEnemy::AEA_MasterEnemy()
 {

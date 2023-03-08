@@ -25,7 +25,7 @@ protected:
 	FCharacterStat CharacterStat;
 public:
 	UFUNCTION(BlueprintCallable)
-	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage);
+	void CharacterSetter(FName CharacterName,UAnimMontage* EquipMontage,UAnimMontage* DodgeMontage, UAnimMontage* Die);
 
 	UFUNCTION(BlueprintCallable)
 	float CharacterTakeDamage(float Damage);
@@ -79,15 +79,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	TObjectPtr<UAnimMontage> AM_NormalHit;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimMontage* AM_NormalAttack;
+		TObjectPtr<UAnimMontage>  AM_NormalAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimMontage* AM_BackAttack;
+		TObjectPtr<UAnimMontage>  AM_BackAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimMontage* AM_LoopAttack;
+		TObjectPtr<UAnimMontage>  AM_LoopAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	UAnimMontage* AM_AirAttack;
+		TObjectPtr<UAnimMontage>  AM_AirAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	TArray<UAnimMontage*> AM_CatchingAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+		TObjectPtr<UAnimMontage> AM_Die;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	FTimerHandle HitTimer;
 public:

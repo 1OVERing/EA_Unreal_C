@@ -12,6 +12,7 @@
 #include "EnhancedInputComponent.h"
 #include "../InputSystem/IMC_Movement.h"
 #include "../InputSystem/IMC_Combat.h"
+#include "../GameSystem/PlayGameMode.h"
 
 #include "Blueprint/UserWidget.h"
 #include "../UI/CharacterStatusHUD.h"
@@ -193,17 +194,28 @@ void AEA_MasterCharacter::Tick(float DeltaTime)
 		CharacterStat.CurStamina = UKismetMathLibrary::FClamp(CharacterStat.CurStamina + (DeltaTime * GuardHealingSpeed), 0.f, CharacterStat.MaxStamina);
 	}
 }
-void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage)
+void AEA_MasterCharacter::CharacterSetter(FName CharacterName, UAnimMontage* EquipMontage, UAnimMontage* DodgeMontage, UAnimMontage* Die)
 {
 	AM_Equip = EquipMontage;
 	AM_Dodge = DodgeMontage;
+	AM_Die = Die;
 }
 float AEA_MasterCharacter::CharacterTakeDamage(float Damage)
 {
 	float RealDamage = Damage;
 	if (CharacterStat.TakeDamage(RealDamage) <= 0)
 	{// Á×À½
-		GEngine->AddOnScreenDebugMessage(112, 1.f, FColor::Red, "Character Death");
+		float DieTime = PlayAnimMontage(AM_Die);
+		FTimerHandle Timer;
+		UnPossessed();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		GetWorld()->GetTimerManager().SetTimer(Timer, FTimerDelegate::CreateLambda([&]()
+			{
+				APlayGameMode* Gamemode = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(this));
+				if (::IsValid(Gamemode))Gamemode->PlayerDeath();
+			}
+		), DieTime - 0.1f, false);
 	}
 	UpdateHUDCharacterStat();
 	return RealDamage;
