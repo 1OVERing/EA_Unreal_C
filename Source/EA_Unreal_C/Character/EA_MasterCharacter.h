@@ -148,6 +148,9 @@ protected:
 public:
 	UFUNCTION()
 		void UpdateHUDCharacterStat();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "UI")
+		void CreateHitIndicator(const FVector2D& TargetLocation);
+	void CreateHitIndicator_Implementation(const FVector2D& TargetLocation);
 #pragma endregion
 };
 

@@ -236,6 +236,9 @@ void AEA_MasterCharacter::UpdateHUDCharacterStat()
 	HUD_CharacterStatus->SetHealth(CharacterStat.CurHP, CharacterStat.MaxHP);
 	HUD_CharacterStatus->SetStamina(CharacterStat.CurStamina, CharacterStat.MaxStamina);
 }
+void AEA_MasterCharacter::CreateHitIndicator_Implementation(const FVector2D& TargetLocation)
+{
+}
 #pragma region InputSystemFunc
 void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -279,6 +282,7 @@ void AEA_MasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 #pragma region Combat
 float AEA_MasterCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	CreateHitIndicator(FVector2D(DamageCauser->GetActorLocation()));
 	if (GetCurrentMontage() == AM_Dodge) return 0.f;
 	if (IsGuard())
 	{
